@@ -6,11 +6,11 @@
 
 [Paper](https://academic.oup.com/bioinformatics/article/39/6/btad354/7186501) | [Document](https://3dmolms.readthedocs.io/en/latest/) | [Workflow on Konia](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer) | [PyPI package](https://pypi.org/project/molnetpack/)
 
-🔔 Latest Release: 3DMolMS v1.2.0 is now available!
+🔔 Latest Release: 3DMolMS v1.2.1 is now available!
 
 The changes log can be found at [./CHANGE_LOG.md](./CHANGE_LOG.md). 
 
-## Accessed in 3 ways
+**Accessed in 3 ways**: 
 
 1. 🧪 **Source Code**: Clone the repository for both training and inference functionality ([document for source code](https://3dmolms.readthedocs.io/en/latest/sourcecode.html)). 
 

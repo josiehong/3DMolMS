@@ -131,19 +131,4 @@ dmypy.json
 
 
 dist/
-check_point_*/
-tmp/
-*.bak
-src/hmdb_3d_rdkit.py
-src/hmdb_3d_openbabel.py
-tmp_hmdb_*.sh
-tmp_hmdb_*.py
-tmp_hmdb_*.png
-tmp_hmdb_*.json
-tmp_hmdb_*.csv
-tmp_hmdb_*.txt
-tmp_count.py
-tmp_agilent_*.*
-src/tmp_preprocess_agilent_test.py
-src/molnetpack/config/preprocess_openbabel.yml
-src/molnetpack/utils.py.openbabel.bak
+src/molnetpack/check_point/
