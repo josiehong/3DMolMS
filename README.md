@@ -16,11 +16,20 @@ The changes log can be found at [./CHANGE_LOG.md](./CHANGE_LOG.md).
 
 ## Getting started
 
-* 🧪 **Source Code**: Clone the repository for both training and inference functionality ([document for source code](https://3dmolms.readthedocs.io/en/latest/sourcecode.html)). 
+**🧪 Source Code**
 
-* 📦 **PyPI Package**: Install `molnetpack` for easy inference with pre-trained models ([document for PyPI package](https://3dmolms.readthedocs.io/en/latest/molnetpack.html)). 
+* Clone the repository for both training and inference functionality
+* [See detailed instructions in the document for source code](https://3dmolms.readthedocs.io/en/latest/sourcecode.html) 
 
-* ☁️ **Web Service**: Access our no-installation web service with API support for inference ([workflow on Konia](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer)). 
+📦 **PyPI Package**
+
+* Install `molnetpack` for easy inference with pre-trained models 
+* [See detailed instructions in the document for PyPI package](https://3dmolms.readthedocs.io/en/latest/molnetpack.html)
+
+☁️ **Web Service**
+
+* Access our no-installation web service with API support for inference
+* [See detailed instructions in the workflow on Konia](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer) 
 
 ## Citation
 

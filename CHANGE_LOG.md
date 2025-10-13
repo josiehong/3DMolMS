@@ -1,3 +1,4 @@
+* 2025.10.12 (v1.2.1): change the build-backend to "setuptools.build_meta"; fix the error of unmatched inputs in v1.2.0; apply `black` for better code format. 
 * 2025.4.28 (v1.2.0): update `MolConv` from version 2 to version 3; add online documentation; add scaler option for RT prediction but using scaler makes convergence harder. 
 * 2024.12.20 (v1.1.10.post1): fix the bug of importing `plot_msms`. 
 * 2024.08.30 (v1.1.10): modify the arguments and return values in `MolNet` for better usage; update the documents.
