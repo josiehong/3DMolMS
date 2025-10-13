@@ -1,0 +1,8 @@
+include src/molnetpack/config/preprocess_etkdgv3.yml
+include src/molnetpack/config/preprocess_hmdb.yml
+include src/molnetpack/config/molnet.yml
+include src/molnetpack/config/molnet_ccs.yml
+include src/molnetpack/config/molnet_ccs_tl.yml
+include src/molnetpack/config/molnet_pre.yml
+include src/molnetpack/config/molnet_rt.yml
+include src/molnetpack/config/molnet_rt_tl.yml
