@@ -11,9 +11,9 @@ device = torch.device("cpu")
 molnet_engine = MolNet(device, seed=42)
 
 # molnet_engine.load_data(path_to_test_data='./test/demo_input.csv', path_to_save_pkl='./test/demp_input.pkl')
-molnet_engine.load_data(path_to_test_data='./test/demo_savefeat_input.csv')
+molnet_engine.load_data(path_to_test_data="./test/demo_input.csv")
 
 ids, features = molnet_engine.save_features()
 
-print('Titles:', ids)
-print('Features shape:', features.shape)
+print("Titles:", ids)
+print("Features shape:", features.shape)

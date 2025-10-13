@@ -1,24 +1,24 @@
 [build-system]
-requires = ["flit_core>=3.4"]
-build-backend = "flit_core.buildapi"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "molnetpack"
-version = "v1.2.0"
+version = "1.2.0"
 authors = [
-    { name="Yuhui Hong" },
-    { name="Sujun Li" },
-    { name="Christopher J Welch" },
-    { name="Shane Tichy" },
-    { name="Yuzhen Ye" },
-    { name="Haixu Tang" }
+    { name = "Yuhui Hong" },
+    { name = "Sujun Li" },
+    { name = "Christopher J Welch" },
+    { name = "Shane Tichy" },
+    { name = "Yuzhen Ye" },
+    { name = "Haixu Tang" }
 ]
 maintainers = [
-    { name="Yuhui Hong", email="yuhhong@iu.edu" }, 
+    { name = "Yuhui Hong", email = "yuhhong@iu.edu" }
 ]
 description = "3DMolMS: prediction of tandem mass spectra from 3D molecular conformations"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -43,7 +43,7 @@ dependencies = [
     "soupsieve",
     "tensorboard",
     "PyYAML",
-    "rdkit", 
+    "rdkit",
     "matplotlib",
     "pillow"
 ]
@@ -52,8 +52,3 @@ dependencies = [
 Homepage = "https://github.com/JosieHong/3DMolMS/"
 Issues = "https://github.com/JosieHong/3DMolMS/issues"
 Changelog = "https://github.com/JosieHong/3DMolMS/blob/main/CHANGE_LOG.md"
-
-# For Read the Docs configuration
-[tool.sphinx]
-source_dir = "docs/source"
-build_dir = "docs/build"

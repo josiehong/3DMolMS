@@ -1,0 +1,4 @@
+ID,SMILES,Precursor Type,Pred CCS
+demo_0,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,[M+H]+,148.08034
+demo_1,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,[M+H]+,148.08034
+demo_2,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,[M+H]+,148.08034
