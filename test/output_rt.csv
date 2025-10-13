@@ -1,0 +1,4 @@
+ID,SMILES,Pred RT
+demo_0,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,92.16347
+demo_1,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,92.16347
+demo_2,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,92.16347

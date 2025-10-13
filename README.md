@@ -6,17 +6,21 @@
 
 [Paper](https://academic.oup.com/bioinformatics/article/39/6/btad354/7186501) | [Document](https://3dmolms.readthedocs.io/en/latest/) | [Workflow on Konia](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer) | [PyPI package](https://pypi.org/project/molnetpack/)
 
-🔔 Latest Release: 3DMolMS v1.2.1 is now available!
+## Latest release
+
+3DMolMS v1.2.1 is now available on PyPI! 
+
+The source code has also been updated to version v1.2.1, and the pretrained checkpoints from v1.2.0 remain fully compatible with this release.
 
 The changes log can be found at [./CHANGE_LOG.md](./CHANGE_LOG.md). 
 
-**Accessed in 3 ways**: 
+## Getting started
 
-1. 🧪 **Source Code**: Clone the repository for both training and inference functionality ([document for source code](https://3dmolms.readthedocs.io/en/latest/sourcecode.html)). 
+* 🧪 **Source Code**: Clone the repository for both training and inference functionality ([document for source code](https://3dmolms.readthedocs.io/en/latest/sourcecode.html)). 
 
-2. 📦 **PyPI Package**: Install `molnetpack` for easy inference with pre-trained models ([document for PyPI package](https://3dmolms.readthedocs.io/en/latest/molnetpack.html)). 
+* 📦 **PyPI Package**: Install `molnetpack` for easy inference with pre-trained models ([document for PyPI package](https://3dmolms.readthedocs.io/en/latest/molnetpack.html)). 
 
-3. ☁️ **Web Service**: Access our no-installation web service with API support for inference ([workflow on Konia](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer)). 
+* ☁️ **Web Service**: Access our no-installation web service with API support for inference ([workflow on Konia](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer)). 
 
 ## Citation
 
