@@ -40,31 +40,63 @@ where ``prop`` column is the RT or CCS values. Split your data into train and te
 **Step 2**: Training
 --------------------
 
-Fine-tune the model:
+Fine-tune the model.
+
+*Using the command-line script:*
 
 .. code-block:: bash
 
    python scripts/train.py --task rt \
    --train_data <path_to_train.pkl> \
    --test_data <path_to_test.pkl> \
-   --model_config_path ./molnetpack/config/molnet_rt.yml \
-   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
    --checkpoint_path <path_to_save_checkpoint> \
    --transfer \
    --resume_path <path_to_pretrained_model> \
    --seed 42
 
+*Using the Python API:*
+
+.. code-block:: python
+
+   import torch
+   from molnetpack import MolNet
+
+   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+   molnet_engine = MolNet(device, seed=42)
+
+   molnet_engine.train(
+       task='rt',
+       train_data='<path_to_train.pkl>',
+       valid_data='<path_to_test.pkl>',
+       checkpoint_path='<path_to_save_checkpoint>',
+       resume_path='<path_to_pretrained_model>',
+       transfer=True,
+       use_scaler=True,
+   )
+
 **Step 3**: Running prediction
 ------------------------------
 
-Predict the unlabeled data:
+Predict unlabeled data.
+
+*Using the command-line script:*
 
 .. code-block:: bash
 
    python scripts/predict.py --task prop \
    --test_data <path_to_csv_or_pkl> \
-   --model_config_path ./molnetpack/config/molnet_rt.yml \
-   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
    --resume_path <path_to_checkpoint> \
    --result_path <path_to_results.csv> \
    --seed 42
+
+*Using the Python API:*
+
+.. code-block:: python
+
+   # After training, the model is ready immediately — no reload needed.
+   # To use an existing checkpoint instead, load it first:
+   molnet_engine.load_data('<path_to_csv_or_pkl>')
+   rt_df = molnet_engine.pred_rt(
+       path_to_results='<path_to_results.csv>',
+       path_to_checkpoint='<path_to_checkpoint>',
+   )

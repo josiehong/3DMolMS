@@ -52,6 +52,8 @@ Run the following commands to preprocess the datasets. Specify the dataset with 
 
 Use the following commands to train the model. Configuration settings for the model and training process are located in ``./molnetpack/config/molnet.yml``.
 
+*Using the command-line script:*
+
 .. code-block:: bash
 
   # Train the model from pretrain:
@@ -59,8 +61,6 @@ Use the following commands to train the model. Configuration settings for the mo
   python scripts/train.py --task msms \
   --train_data ./data/qtof_etkdgv3_train.pkl \
   --test_data ./data/qtof_etkdgv3_test.pkl \
-  --model_config_path ./molnetpack/config/molnet.yml \
-  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --checkpoint_path ./check_point/molnet_qtof_etkdgv3_tl.pt \
   --transfer \
   --resume_path ./check_point/molnet_pre_etkdgv3.pt
@@ -71,8 +71,6 @@ Use the following commands to train the model. Configuration settings for the mo
   python scripts/train.py --task msms \
   --train_data ./data/qtof_etkdgv3_train.pkl \
   --test_data ./data/qtof_etkdgv3_test.pkl \
-  --model_config_path ./molnetpack/config/molnet.yml \
-  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --checkpoint_path ./check_point/molnet_qtof_etkdgv3.pt \
   --ex_model_path ./check_point/molnet_qtof_etkdgv3_jit.pt --device 0
 
@@ -80,15 +78,35 @@ Use the following commands to train the model. Configuration settings for the mo
   python scripts/train.py --task msms \
   --train_data ./data/orbitrap_etkdgv3_train.pkl \
   --test_data ./data/orbitrap_etkdgv3_test.pkl \
-  --model_config_path ./molnetpack/config/molnet.yml \
-  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --checkpoint_path ./check_point/molnet_orbitrap_etkdgv3.pt \
   --ex_model_path ./check_point/molnet_orbitrap_etkdgv3_jit.pt --device 0
+
+*Using the Python API:*
+
+.. code-block:: python
+
+  import torch
+  from molnetpack import MolNet
+
+  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+  molnet_engine = MolNet(device, seed=42)
+
+  # Fine-tune from a pretrained checkpoint (Q-TOF):
+  molnet_engine.train(
+      task='msms',
+      train_data='./data/qtof_etkdgv3_train.pkl',
+      valid_data='./data/qtof_etkdgv3_test.pkl',
+      checkpoint_path='./check_point/molnet_qtof_etkdgv3_tl.pt',
+      resume_path='./check_point/molnet_pre_etkdgv3.pt',
+      transfer=True,
+  )
 
 **Step 5**: Evaluation
 ----------------------
 
 Let's evaluate the model trained above!
+
+*Using the command-line scripts:*
 
 .. code-block:: bash
 
@@ -96,15 +114,11 @@ Let's evaluate the model trained above!
   # Q-TOF:
   python scripts/predict.py --task msms \
   --test_data ./data/qtof_etkdgv3_test.pkl \
-  --model_config_path ./molnetpack/config/molnet.yml \
-  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
   --result_path ./result/pred_qtof_etkdgv3_test.mgf
   # Orbitrap:
   python scripts/predict.py --task msms \
   --test_data ./data/orbitrap_etkdgv3_test.pkl \
-  --model_config_path ./molnetpack/config/molnet.yml \
-  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --resume_path ./check_point/molnet_orbitrap_etkdgv3.pt \
   --result_path ./result/pred_orbitrap_etkdgv3_test.mgf
 
@@ -115,3 +129,23 @@ Let's evaluate the model trained above!
   # Orbitrap:
   python scripts/eval.py ./data/orbitrap_etkdgv3_test.pkl ./result/pred_orbitrap_etkdgv3_test.mgf \
   --result_path ./eval_orbitrap_etkdgv3_test.csv --plot_path ./eval_orbitrap_etkdgv3_test.png
+
+*Using the Python API:*
+
+.. code-block:: python
+
+  # After training, the model is immediately ready — no checkpoint reload needed.
+  # Alternatively, load an existing checkpoint:
+  molnet_engine.load_data('./data/qtof_etkdgv3_test.pkl')
+  pred_df = molnet_engine.pred_msms(
+      path_to_results='./result/pred_qtof_etkdgv3_test.mgf',
+      instrument='qtof',
+  )
+
+  # Evaluate cosine similarity against ground truth:
+  results_df = molnet_engine.evaluate(
+      test_pkl='./data/qtof_etkdgv3_test.pkl',
+      pred_mgf='./result/pred_qtof_etkdgv3_test.mgf',
+      result_path='./eval_qtof_etkdgv3_test.csv',
+      plot_path='./eval_qtof_etkdgv3_test.png',
+  )
