@@ -11,7 +11,7 @@ Please set up the environment as shown in the :doc:`../sourcecode` page.
 **Step 1**: Input preparation
 -----------------------------
 
-Prepare the test set. The following formats are supported: csv, mgf, or `customed pkl <https://github.com/JosieHong/3DMolMS/blob/main/molmspack/data_utils/all2pkl.py>`_.
+Prepare the test set. The following formats are supported: csv, mgf, or `customed pkl <https://github.com/JosieHong/3DMolMS/blob/main/molnetpack/data_utils/all2pkl.py>`_.
 
 CSV Format Example
 ~~~~~~~~~~~~~~~~~~
@@ -76,17 +76,15 @@ Predict the MS/MS spectra using the following command:
 
 .. code-block:: bash
 
-  python ./src/pred.py \
-  --test_data ./demo/demo_input.csv \
-  --model_config_path ./src/molnetpack/config/molnet.yml \
-  --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+  python scripts/predict.py --task msms \
+  --test_data ./examples/demo_input.csv \
+  --model_config_path ./molnetpack/config/molnet.yml \
+  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
-  --result_path ./test/demo_output.mgf \
-  --save_img_dir ./img/
+  --result_path ./examples/demo_output.mgf
 
 Arguments
 ~~~~~~~~~
 
 * ``--resume_path``: Path of model's checkpoint. In the first running, the checkpoint (``./checkpoint/molnet_qtof_etkdgv3.pt``) will be downloaded from `Google Drive <https://drive.google.com/drive/folders/1fWx3d8vCPQi-U-obJ3kVL3XiRh75x5Ce?usp=drive_link>`_. You can also set the resume path to your own model.
 * ``--result_path``: Path to save the predicted MS/MS. It should end with ``.mgf`` or ``.csv``. We recommend using ``.mgf`` because MGF is a more common format for MS/MS.
-* ``--save_img_dir``: Optional argument denoting the path to save the figures of predicted MS/MS.

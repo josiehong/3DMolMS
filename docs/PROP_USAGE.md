@@ -25,7 +25,7 @@ For CCS prediction, please use `pred_ccs` as shown in the following codes after 
 
 ```python
 # Load input data
-molnet_engine.load_data(path_to_test_data='./test/input_ccs.csv')
+molnet_engine.load_data(path_to_test_data='./examples/input_ccs.csv')
 
 # Pred CCS
 ccs_df = molnet_engine.pred_ccs()
@@ -44,7 +44,7 @@ For RT prediction, please use `pred_rt` as shown in the following codes after in
 
 ```python
 # Load input data
-molnet_engine.load_data(path_to_test_data='./test/input_rt.csv')
+molnet_engine.load_data(path_to_test_data='./examples/input_rt.csv')
 
 # Pred RT
 rt_df = molnet_engine.pred_rt()
@@ -63,7 +63,7 @@ For saving the molecular embeddings, please use the following codes after instan
 
 ```python
 # Load input data
-molnet_engine.load_data(path_to_test_data='./test/input_savefeat.csv')
+molnet_engine.load_data(path_to_test_data='./examples/input_savefeat.csv')
 
 # Inference to get the features
 ids, features = molnet_engine.save_features()

@@ -24,21 +24,22 @@ Download the QM9 dataset from `Figshare <https://figshare.com/collections/Quantu
 **Step 2**: Preprocessing
 -------------------------
 
-Use the following commands to preprocess the datasets. The dataset configuration is stored in ``./src/molnetpack/config/preprocess_etkdgv3.yml``.
+Use the following commands to preprocess the datasets. The dataset configuration is stored in ``./molnetpack/config/preprocess_etkdgv3.yml``.
 
 .. code-block:: bash
 
-   python ./src/qm92pkl.py --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml 
+   python scripts/qm92pkl.py --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml
 
 **Step 3**: Pretraining
 -----------------------
 
-Use the following commands to pretrain the model. The model and training settings are in ``./src/molnetpack/config/molnet_pre.yml``.
+Use the following commands to pretrain the model. The model and training settings are in ``./molnetpack/config/molnet_pre.yml``.
 
 .. code-block:: bash
 
-   python ./src/pretrain.py --train_data ./data/qm9_etkdgv3_train.pkl \
+   python scripts/pretrain.py \
+   --train_data ./data/qm9_etkdgv3_train.pkl \
    --test_data ./data/qm9_etkdgv3_test.pkl \
-   --model_config_path ./src/molnetpack/config/molnet_pre.yml \
-   --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+   --model_config_path ./molnetpack/config/molnet_pre.yml \
+   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
    --checkpoint_path ./check_point/molnet_pre_etkdgv3.pt

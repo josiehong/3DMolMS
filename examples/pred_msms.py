@@ -14,18 +14,18 @@ molnet_engine = MolNet(device, seed=42)  # The random seed can be any integer.
 
 # Load input data (here we use a CSV file as an example)
 molnet_engine.load_data(
-    path_to_test_data="./test/demo_input.csv"
+    path_to_test_data="./examples/demo_input.csv"
 )  # Increasing the batch size if you wanna speed up.
-# molnet_engine.load_data(path_to_test_data='./test/demo_input.mgf') # MGF file is also supported
-# molnet_engine.load_data(path_to_test_data='./test/demo_input.pkl') # PKL file is faster.
+# molnet_engine.load_data(path_to_test_data='./examples/demo_input.mgf') # MGF file is also supported
+# molnet_engine.load_data(path_to_test_data='./examples/demo_input.pkl') # PKL file is faster.
 
 # Predict MS/MS
-# spectra = molnet_engine.pred_msms(path_to_results='./test/output_msms.mgf', path_to_checkpoint='./check_point/molnet_qtof_etkdgv3.pt', instrument='qtof')
+# spectra = molnet_engine.pred_msms(path_to_results='./examples/output_msms.mgf', path_to_checkpoint='./check_point/molnet_qtof_etkdgv3.pt', instrument='qtof')
 spectra = molnet_engine.pred_msms(
-    path_to_results="./test/output_msms.mgf", instrument="qtof"
+    path_to_results="./examples/output_msms.mgf", instrument="qtof"
 )  # Download checkpoint from GitHub release page.
 msms_res_df = molnet_engine.pred_msms(
-    path_to_results="./test/output_msms.csv", instrument="qtof"
+    path_to_results="./examples/output_msms.csv", instrument="qtof"
 )  # Download checkpoint from GitHub release page.
 
 # Plot the predicted MS/MS with 3D molecular conformation

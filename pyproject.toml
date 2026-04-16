@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "molnetpack"
-version = "1.2.1"
+version = "1.2.2"
 authors = [
     { name = "Yuhui Hong" },
     { name = "Sujun Li" },
@@ -45,7 +45,9 @@ dependencies = [
     "PyYAML",
     "rdkit",
     "matplotlib",
-    "pillow"
+    "pillow",
+    "scikit-learn",
+    "tqdm"
 ]
 
 [project.urls]
@@ -53,5 +55,8 @@ Homepage = "https://github.com/JosieHong/3DMolMS/"
 Issues = "https://github.com/JosieHong/3DMolMS/issues"
 Changelog = "https://github.com/JosieHong/3DMolMS/blob/main/CHANGE_LOG.md"
 
+[tool.setuptools.packages.find]
+include = ["molnetpack*"]
+
 [tool.setuptools.package-data]
-"molnetpack" = ["molnetpack/config/*.yml"]
+"molnetpack" = ["config/*.yml"]
