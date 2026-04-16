@@ -14,27 +14,30 @@ Step 1: Download the retention time dataset, [[METLIN]](https://figshare.com/art
     |- SMRT_dataset.sdf
 ```
 
-Step 2: Use the following commands to preprocess the datasets. The settings of datasets are in `./src/molnetpack/config/preprocess_etkdgv3.yml`. 
+Step 2: Use the following commands to preprocess the datasets. The settings of datasets are in `./molnetpack/config/preprocess_etkdgv3.yml`. 
 
 ```bash
-python ./src/preprocess_oth.py --dataset metlin 
+python scripts/preprocess.py --task rt \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml
 ```
 
-Step 3: Use the following commands to train the model. The settings of model and training are in `./config/molnet_rt.yml`. If you'd like to train this model from the pre-trained model on MS/MS prediction, please download the pre-trained model from [[Google Drive]](https://drive.google.com/drive/folders/1fWx3d8vCPQi-U-obJ3kVL3XiRh75x5Ce?usp=drive_link). 
+Step 3: Use the following commands to train the model. The settings of model and training are in `./molnetpack/config/molnet_rt.yml`. If you'd like to train this model from the pre-trained model on MS/MS prediction, please download the pre-trained model from [[Google Drive]](https://drive.google.com/drive/folders/1fWx3d8vCPQi-U-obJ3kVL3XiRh75x5Ce?usp=drive_link). 
 
 ```bash
 # learn from scratch
-python ./src/train_rt.py --train_data ./data/metlin_etkdgv3_train.pkl \
+python scripts/train.py --task rt \
+--train_data ./data/metlin_etkdgv3_train.pkl \
 --test_data ./data/metlin_etkdgv3_test.pkl \
---model_config_path ./src/molnetpack/config/molnet_rt.yml \
---data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+--model_config_path ./molnetpack/config/molnet_rt.yml \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
 --checkpoint_path ./check_point/molnet_rt_etkdgv3.pt
 
 # learn from pretrained model
-python ./src/train_rt.py --train_data ./data/metlin_etkdgv3_train.pkl \
+python scripts/train.py --task rt \
+--train_data ./data/metlin_etkdgv3_train.pkl \
 --test_data ./data/metlin_etkdgv3_test.pkl \
---model_config_path ./src/molnetpack/config/molnet_rt.yml \
---data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+--model_config_path ./molnetpack/config/molnet_rt.yml \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
 --checkpoint_path ./check_point/molnet_rt_etkdgv3_tl.pt \
 --transfer \
 --resume_path ./check_point/molnet_qtof_etkdgv3.pt
@@ -49,7 +52,7 @@ Please set up the environment as shown in step 0 from `README.md`.
 Step 1: Download the cross-collision section dataset, [[AllCCS]](http://allccs.zhulab.cn/), manually or using `download_allccs.py`:
 
 ```bash
-python ./src/download_allccs.py --user <user_name> --passw <passwords> --output ./data/origin/allccs_download.csv
+python scripts/download_allccs.py --user <user_name> --passw <passwords> --output ./data/origin/allccs_download.csv
 ```
 
 The structure of data directory is: 
@@ -60,66 +63,78 @@ The structure of data directory is:
     |- allccs_download.csv
 ```
 
-Step 2: Use the following commands to preprocess the datasets. The settings of datasets are in `./src/molnetpack/config/preprocess_etkdgv3.yml`. 
+Step 2: Use the following commands to preprocess the datasets. The settings of datasets are in `./molnetpack/config/preprocess_etkdgv3.yml`. 
 
 ```bash
-python ./src/preprocess_oth.py --dataset allccs --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml
+python scripts/preprocess.py --task ccs \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml
 ```
 
-Step 3: Use the following commands to train the model. The settings of model and training are in `./src/molnetpack/config/molnet_ccs.yml`. If you'd like to train this model from the pre-trained model on MS/MS prediction, please download the pre-trained model from [[Google Drive]](https://drive.google.com/drive/folders/1fWx3d8vCPQi-U-obJ3kVL3XiRh75x5Ce?usp=drive_link). 
+Step 3: Use the following commands to train the model. The settings of model and training are in `./molnetpack/config/molnet_ccs.yml`. If you'd like to train this model from the pre-trained model on MS/MS prediction, please download the pre-trained model from [[Google Drive]](https://drive.google.com/drive/folders/1fWx3d8vCPQi-U-obJ3kVL3XiRh75x5Ce?usp=drive_link). 
 
 ```bash
 # learn from scratch
-python ./src/train_ccs.py --train_data ./data/allccs_etkdgv3_train.pkl \
+python scripts/train.py --task ccs \
+--train_data ./data/allccs_etkdgv3_train.pkl \
 --test_data ./data/allccs_etkdgv3_test.pkl \
---model_config_path ./src/molnetpack/config/molnet_ccs.yml \
---data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
---checkpoint_path ./check_point/molnet_ccs_etkdgv3.pt 
+--model_config_path ./molnetpack/config/molnet_ccs.yml \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
+--checkpoint_path ./check_point/molnet_ccs_etkdgv3.pt
 
 # learn from pretrained model
-python ./src/train_ccs.py --train_data ./data/allccs_etkdgv3_train.pkl \
+python scripts/train.py --task ccs \
+--train_data ./data/allccs_etkdgv3_train.pkl \
 --test_data ./data/allccs_etkdgv3_test.pkl \
---model_config_path ./src/molnetpack/config/molnet_ccs.yml \
---data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+--model_config_path ./molnetpack/config/molnet_ccs.yml \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
 --checkpoint_path ./check_point/molnet_ccs_etkdgv3_tl.pt \
 --transfer \
---resume_path ./check_point/molnet_qtof_etkdgv3.pt 
+--resume_path ./check_point/molnet_qtof_etkdgv3.pt
 ```
 
 ## Fine-tune on your own data
 
-Step 1: Please prepare the retention time data as: 
+Step 1: Please prepare your data as two pkl files (train and test). If starting from a CSV, split it into train/test CSVs first, then convert each with: 
+
+```bash
+python -c "
+from molnetpack import csv2pkl_wfilter
+import yaml, pickle
+with open('./molnetpack/config/preprocess_etkdgv3.yml') as f:
+    cfg = yaml.safe_load(f)
+data = csv2pkl_wfilter('<path_to_train.csv>', cfg['encoding'])
+pickle.dump(data, open('<path_to_train.pkl>', 'wb'))
+"
+```
+
+The CSV should have at minimum `id`, `smiles`, and `prop` columns, where `prop` is the RT or CCS value:
+
 ```csv
-,id,smiles,prop
-0,0382_00004,NC(=O)N1c2ccccc2[C@H](O)[C@@H](O)c2ccccc21,5.79
-1,0382_00005,CN(C)[C@@H]1C(=O)C(C(N)=O)=C(O)[C@@]2(O)C(=O)C3=C(O)c4c(O)ccc(Cl)c4[C@@](C)(O)[C@H]3C[C@@H]12,4.5
-2,0382_00008,Cc1onc(-c2c(Cl)cccc2Cl)c1C(=O)N[C@@H]1C(=O)N2[C@@H](C(=O)O)C(C)(C)S[C@H]12,7.8
-3,0382_00009,C[C@H]1c2cccc(O)c2C(O)=C2C(=O)[C@]3(O)C(O)=C(C(N)=O)C(=O)[C@@H](N(C)C)[C@@H]3[C@@H](O)[C@@H]21,6.2
-4,0382_00010,C#C[C@]1(O)CC[C@H]2[C@@H]3CCc4cc(O)ccc4[C@H]3CC[C@@]21C,9.46
-5,0382_00012,Cc1onc(-c2ccccc2)c1C(=O)N[C@@H]1C(=O)N2[C@@H](C(=O)O)C(C)(C)S[C@H]12,6.9
+id,smiles,prop
+0382_00004,NC(=O)N1c2ccccc2[C@H](O)[C@@H](O)c2ccccc21,5.79
+0382_00005,CN(C)[C@@H]1C(=O)C(C(N)=O)=C(O)[C@@]2(O)...,4.5
 ```
-where `prop` column is the RT or CCS values. 
 
-Step 2: Fine-tune the model!
+Step 2: Fine-tune the model:
 
 ```bash
-python ./src/train_csv.py --data <path to csv/pkl data> \ 
---model_config_path <path to configuration> \
---checkpoint_path <path to save the checkpoint> \
+python scripts/train.py --task rt \
+--train_data <path_to_train.pkl> \
+--test_data <path_to_test.pkl> \
+--model_config_path ./molnetpack/config/molnet_rt.yml \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
+--checkpoint_path <path_to_save_checkpoint> \
 --transfer \
---resume_path <path to pretrained model> \
---result_path <path to save the prediction results> \
---seed 42 # for randomly data splitting and randomly dropping out the neurons in the model
-
-# If the data is already preprocessed, you could use pkl file directly.
+--resume_path <path_to_pretrained_model>
 ```
 
-Step 3: Predict the unlabeled data
+Step 3: Predict on unlabeled data:
 
 ```bash
-python pred_csv.py --data <path to csv/pkl data> \
---model_config_path <path to configuration> \
---checkpoint_path <path to save the checkpoint> \
---result_path <path to save the prediction results> \
---seed 42
+python scripts/predict.py --task prop \
+--test_data <path_to_csv_or_pkl> \
+--model_config_path ./molnetpack/config/molnet_rt.yml \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
+--resume_path <path_to_checkpoint> \
+--result_path <path_to_results.csv>
 ```

@@ -21,7 +21,7 @@ PyTorch must be installed separately. Check the `official PyTorch website <https
 Using ``molnetpack`` for MS/MS prediction
 -----------------------------------------
 
-The sample input files, a CSV and an MGF, are located at ``./test/demo_input.csv`` and ``./test/demo_input.mgf``, respectively. It's important to note that during the data loading phase, any input formats that are not supported will be automatically excluded. Below is a table outlining the types of input data that are supported:
+The sample input files, a CSV and an MGF, are located at ``./examples/demo_input.csv`` and ``./examples/demo_input.mgf``, respectively. It's important to note that during the data loading phase, any input formats that are not supported will be automatically excluded. Below is a table outlining the types of input data that are supported:
 
 .. list-table::
    :header-rows: 1
@@ -63,7 +63,7 @@ For example:
    molnet_engine = MolNet(device, seed=42) # The random seed can be any integer. 
 
    # Load input data (here we use a CSV file as an example)
-   molnet_engine.load_data(path_to_test_data='./test/input_msms.csv')
+   molnet_engine.load_data(path_to_test_data='./examples/input_msms.csv')
    
    # Predict MS/MS
    pred_spectra_df = molnet_engine.pred_msms(instrument='qtof')
@@ -123,7 +123,7 @@ For example:
 .. code-block:: python
 
    # Load input data
-   molnet_engine.load_data(path_to_test_data='./test/input_rt.csv')
+   molnet_engine.load_data(path_to_test_data='./examples/input_rt.csv')
 
    # Pred RT
    rt_df = molnet_engine.pred_rt()
@@ -140,7 +140,7 @@ For example:
 .. code-block:: python
 
    # Load input data
-   molnet_engine.load_data(path_to_test_data='./test/input_ccs.csv')
+   molnet_engine.load_data(path_to_test_data='./examples/input_ccs.csv')
 
    # Pred CCS
    ccs_df = molnet_engine.pred_ccs()
@@ -157,7 +157,7 @@ For example:
 .. code-block:: python
 
    # Load input data
-   molnet_engine.load_data(path_to_test_data='./test/input_savefeat.csv')
+   molnet_engine.load_data(path_to_test_data='./examples/input_savefeat.csv')
 
    # Inference to get the features
    ids, features = molnet_engine.save_features()

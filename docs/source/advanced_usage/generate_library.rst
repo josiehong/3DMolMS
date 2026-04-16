@@ -25,32 +25,32 @@ Download the HMDB molecules dataset from `HMDB Downloads <https://hmdb.ca/downlo
 **Step 2**: Preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the following commands to preprocess the datasets. The dataset configuration is stored in ``./src/molnetpack/config/preprocess_etkdgv3.yml``.
+Use the following commands to preprocess the datasets. The dataset configuration is stored in ``./molnetpack/config/preprocess_etkdgv3.yml``.
 
 Using ETKDGv3:
 
 .. code-block:: bash
 
-   python ./src/hmdb2pkl.py --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml
+   python scripts/hmdb2pkl.py --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml
 
 Or using original conformation:
 
 .. code-block:: bash
 
-   python ./src/hmdb2pkl.py --data_config_path ./src/molnetpack/config/preprocess_hmdb.yml
+   python scripts/hmdb2pkl.py --data_config_path ./molnetpack/config/preprocess_hmdb.yml
 
 **Step 3**: MS/MS generation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the following commands to generate MS/MS spectra. The model configuration is stored in ``./src/molnetpack/config/molnet.yml``. Remember to modify the commands if you're using the original conformations from HMDB.
+Use the following commands to generate MS/MS spectra. The model configuration is stored in ``./molnetpack/config/molnet.yml``. Remember to modify the commands if you're using the original conformations from HMDB.
 
 .. code-block:: bash
 
-   for i in {0..21}; do 
-     echo $i
-     python ./src/pred.py --test_data ./data/hmdb/hmdb_etkdgv3_$i.pkl \
-     --model_config_path ./src/molnetpack/config/molnet.yml \
-     --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+   for i in {0..21}; do
+     python scripts/predict.py --task msms \
+     --test_data ./data/hmdb/hmdb_etkdgv3_$i.pkl \
+     --model_config_path ./molnetpack/config/molnet.yml \
+     --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
      --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
      --result_path ./data/hmdb/molnet_hmdb_etkdgv3_$i.mgf
    done
@@ -77,21 +77,22 @@ Download the RefMet molecules dataset from `RefMet Browse <https://www.metabolom
 **Step 2**: Preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the following commands to preprocess the datasets. The dataset configuration is stored in ``./src/molnetpack/config/preprocess_etkdgv3.yml``.
+Use the following commands to preprocess the datasets. The dataset configuration is stored in ``./molnetpack/config/preprocess_etkdgv3.yml``.
 
 .. code-block:: bash
 
-   python ./src/refmet2pkl.py --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml
+   python scripts/refmet2pkl.py --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml
 
 **Step 3**: MS/MS generation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the following commands to generate MS/MS spectra. The model configuration is stored in ``./src/molnetpack/config/molnet.yml``.
+Use the following commands to generate MS/MS spectra. The model configuration is stored in ``./molnetpack/config/molnet.yml``.
 
-.. code-block:: bash 
+.. code-block:: bash
 
-   python ./src/pred.py --test_data ./data/refmet/refmet_etkdgv3.pkl \
-   --model_config_path ./src/molnetpack/config/molnet.yml \
-   --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+   python scripts/predict.py --task msms \
+   --test_data ./data/refmet/refmet_etkdgv3.pkl \
+   --model_config_path ./molnetpack/config/molnet.yml \
+   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
    --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
    --result_path ./data/refmet/molnet_refmet_etkdgv3.mgf

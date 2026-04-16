@@ -24,25 +24,27 @@ Download the retention time dataset, `METLIN <https://figshare.com/articles/data
 **Step 2**: Preprocessing
 -------------------------
 
-Use the following commands to preprocess the datasets. The settings of datasets are in ``./src/molnetpack/config/preprocess_etkdgv3.yml``.
+Use the following commands to preprocess the datasets. The settings of datasets are in ``./molnetpack/config/preprocess_etkdgv3.yml``.
 
 .. code-block:: bash
 
-   python ./src/preprocess_oth.py --dataset metlin
+   python scripts/preprocess.py --task rt \
+   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml
 
 **Step 3**: Training
 --------------------
 
-Use the following commands to train the model. The settings of model and training are in ``./src/molnetpack/config/molnet_rt.yml``. 
+Use the following commands to train the model. The settings of model and training are in ``./molnetpack/config/molnet_rt.yml``.
 
 Learning from scratch:
 
 .. code-block:: bash
 
-   python ./src/train_rt.py --train_data ./data/metlin_etkdgv3_train.pkl \
+   python scripts/train.py --task rt \
+   --train_data ./data/metlin_etkdgv3_train.pkl \
    --test_data ./data/metlin_etkdgv3_test.pkl \
-   --model_config_path ./src/molnetpack/config/molnet_rt.yml \
-   --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+   --model_config_path ./molnetpack/config/molnet_rt.yml \
+   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
    --checkpoint_path ./check_point/molnet_rt_etkdgv3.pt
 
 If you'd like to train this model from the pre-trained model on MS/MS prediction, please download the pre-trained model from `release v1.2.0 <https://github.com/JosieHong/3DMolMS/releases/tag/v1.2.0>`_.
@@ -51,10 +53,11 @@ Learning from MS/MS model:
 
 .. code-block:: bash
 
-   python ./src/train_rt.py --train_data ./data/metlin_etkdgv3_train.pkl \
+   python scripts/train.py --task rt \
+   --train_data ./data/metlin_etkdgv3_train.pkl \
    --test_data ./data/metlin_etkdgv3_test.pkl \
-   --model_config_path ./src/molnetpack/config/molnet_rt_tl.yml \
-   --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+   --model_config_path ./molnetpack/config/molnet_rt_tl.yml \
+   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
    --checkpoint_path ./check_point/molnet_rt_etkdgv3_tl.pt \
    --transfer \
    --resume_path ./check_point/molnet_qtof_etkdgv3.pt

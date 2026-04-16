@@ -9,9 +9,9 @@ cd 3DMolMS
 pip install .
 ```
 
-Step 1: Prepare the test set. The following formats are supported: csv, mgf, or [customed pkl](molmspack/data_utils/all2pkl.py). 
+Step 1: Prepare the test set. The following formats are supported: csv, mgf, or [customed pkl](molnetpack/data_utils/all2pkl.py). 
 
-Here is an input example from MoNA of csv format (see the whole file at `./test/demo_input.csv`): 
+Here is an input example from MoNA of csv format (see the whole file at `./examples/demo_input.csv`): 
 
 ```
 ID,SMILES,Precursor_Type,Collision_Energy
@@ -20,7 +20,7 @@ demo_1,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,[M+H]+,20 V
 demo_2,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,[M+H]+,10 V
 ```
 
-Here is an input example from MoNA of mgf format (see the whole file at `./test/demo_input.mgf`): 
+Here is an input example from MoNA of mgf format (see the whole file at `./examples/demo_input.mgf`): 
 
 ```
 BEGIN IONS
@@ -54,21 +54,19 @@ Please notice that the unsupported input will be filtered out automatically when
 Step 2: Predict the MS/MS spectra using the following command: 
 
 ```bash
-python ./src/pred.py \
---test_data ./demo/demo_input.csv \
---model_config_path ./src/molnetpack/config/molnet.yml \
---data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+python scripts/predict.py --task msms \
+--test_data ./examples/demo_input.csv \
+--model_config_path ./molnetpack/config/molnet.yml \
+--data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
 --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
---result_path ./test/demo_output.mgf \
---save_img_dir ./img/
+--result_path ./examples/demo_output.mgf
 ```
 
 Arguments: 
 
 - `--resume_path` is the path of model's checkpoint. In the first running, the checkpoint (`./checkpoint/molnet_qtof_etkdgv3.pt`) will be downloaded from [Google Drive](https://drive.google.com/drive/folders/1fWx3d8vCPQi-U-obJ3kVL3XiRh75x5Ce?usp=drive_link). You can also set the resume path as the path to your own model. 
 - `--result_path` is the path to save the predicted MS/MS. It should end with `.mgf` or `.csv`. We recommend you use `.mgf` because mgf is a more common format for MS/MS.  
-- `--save_img_dir` is an optional argument denoting the path to save the figures of predicted MS/MS. One of the plots is shown here: 
 
 <p align="center">
   <img src='img/demo_0.png' width='600'>
-</p> 
+</p>

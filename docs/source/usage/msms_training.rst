@@ -37,77 +37,81 @@ The data directory structure should look like this:
 **Step 3**: Preprocess the Datasets
 -----------------------------------
 
-Run the following commands to preprocess the datasets. Specify the dataset with ``--dataset`` and select the instrument type as ``qtof``. Use ``--maxmin_pick`` to apply the MaxMin algorithm for selecting training molecules; otherwise, selection will be random. The dataset configurations are in ``./src/molnetpack/config/preprocess_etkdgv3.yml``.
+Run the following commands to preprocess the datasets. Specify the dataset with ``--dataset`` and select the instrument type as ``qtof``. Use ``--maxmin_pick`` to apply the MaxMin algorithm for selecting training molecules; otherwise, selection will be random. The dataset configurations are in ``./molnetpack/config/preprocess_etkdgv3.yml``.
 
 .. code-block:: bash
 
-    python ./src/preprocess.py --dataset agilent nist mona waters gnps \
+    python scripts/preprocess.py --task msms \
+    --dataset agilent nist mona waters gnps \
     --instrument_type qtof orbitrap \
-    --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
-    --mgf_dir ./data/mgf_debug/ 
+    --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
+    --mgf_dir ./data/mgf_debug/
 
 **Step 4**: Train the Model
 ---------------------------
 
-Use the following commands to train the model. Configuration settings for the model and training process are located in ``./src/molnetpack/config/molnet.yml``.
+Use the following commands to train the model. Configuration settings for the model and training process are located in ``./molnetpack/config/molnet.yml``.
 
 .. code-block:: bash
-  
-  # Train the model from pretrain: 
-  # Q-TOF: 
-  python ./src/train.py --train_data ./data/qtof_etkdgv3_train.pkl \
+
+  # Train the model from pretrain:
+  # Q-TOF:
+  python scripts/train.py --task msms \
+  --train_data ./data/qtof_etkdgv3_train.pkl \
   --test_data ./data/qtof_etkdgv3_test.pkl \
-  --model_config_path ./src/molnetpack/config/molnet.yml \
-  --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+  --model_config_path ./molnetpack/config/molnet.yml \
+  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --checkpoint_path ./check_point/molnet_qtof_etkdgv3_tl.pt \
   --transfer \
-  --resume_path ./check_point/molnet_pre_etkdgv3.pt 
-  # Orbitrap can be done in a similar way. 
+  --resume_path ./check_point/molnet_pre_etkdgv3.pt
+  # Orbitrap can be done in a similar way.
 
   # Train the model from scratch
-  # Q-TOF: 
-  python ./src/train.py --train_data ./data/qtof_etkdgv3_train.pkl \
+  # Q-TOF:
+  python scripts/train.py --task msms \
+  --train_data ./data/qtof_etkdgv3_train.pkl \
   --test_data ./data/qtof_etkdgv3_test.pkl \
-  --model_config_path ./src/molnetpack/config/molnet.yml \
-  --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+  --model_config_path ./molnetpack/config/molnet.yml \
+  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --checkpoint_path ./check_point/molnet_qtof_etkdgv3.pt \
-  --ex_model_path ./check_point/molnet_qtof_etkdgv3_jit.pt --device 0 
+  --ex_model_path ./check_point/molnet_qtof_etkdgv3_jit.pt --device 0
 
-  # Orbitrap: 
-  python ./src/train.py --train_data ./data/orbitrap_etkdgv3_train.pkl \
+  # Orbitrap:
+  python scripts/train.py --task msms \
+  --train_data ./data/orbitrap_etkdgv3_train.pkl \
   --test_data ./data/orbitrap_etkdgv3_test.pkl \
-  --model_config_path ./src/molnetpack/config/molnet.yml \
-  --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+  --model_config_path ./molnetpack/config/molnet.yml \
+  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --checkpoint_path ./check_point/molnet_orbitrap_etkdgv3.pt \
   --ex_model_path ./check_point/molnet_orbitrap_etkdgv3_jit.pt --device 0
 
 **Step 5**: Evaluation
 ----------------------
 
-Let's evaluate the model trained above! 
+Let's evaluate the model trained above!
 
 .. code-block:: bash
 
-  # Predict the spectra: 
-  # Q-TOF: 
-  python ./src/pred.py \
+  # Predict the spectra:
+  # Q-TOF:
+  python scripts/predict.py --task msms \
   --test_data ./data/qtof_etkdgv3_test.pkl \
-  --model_config_path ./src/molnetpack/config/molnet.yml \
-  --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+  --model_config_path ./molnetpack/config/molnet.yml \
+  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
-  --result_path ./result/pred_qtof_etkdgv3_test.mgf 
-  # Orbitrap: 
-  python ./src/pred.py \
+  --result_path ./result/pred_qtof_etkdgv3_test.mgf
+  # Orbitrap:
+  python scripts/predict.py --task msms \
   --test_data ./data/orbitrap_etkdgv3_test.pkl \
-  --model_config_path ./src/molnetpack/config/molnet.yml \
-  --data_config_path ./src/molnetpack/config/preprocess_etkdgv3.yml \
+  --model_config_path ./molnetpack/config/molnet.yml \
+  --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --resume_path ./check_point/molnet_orbitrap_etkdgv3.pt \
-  --result_path ./result/pred_orbitrap_etkdgv3_test.mgf 
+  --result_path ./result/pred_orbitrap_etkdgv3_test.mgf
 
   # Evaluate the cosine similarity between experimental spectra and predicted spectra:
-  # Q-TOF: 
-  python ./src/eval.py ./data/qtof_etkdgv3_test.pkl ./result/pred_qtof_etkdgv3_test.mgf \
-  ./eval_qtof_etkdgv3_test.csv ./eval_qtof_etkdgv3_test.png
-  # Orbitrap: 
-  python ./src/eval.py ./data/orbitrap_etkdgv3_test.pkl ./result/pred_orbitrap_etkdgv3_test.mgf \
-  ./eval_orbitrap_etkdgv3_test.csv ./eval_orbitrap_etkdgv3_test.png
+  # Q-TOF:
+  python scripts/eval.py ./data/qtof_etkdgv3_test.pkl ./result/pred_qtof_etkdgv3_test.mgf \
+  --result_path ./eval_qtof_etkdgv3_test.csv --plot_path ./eval_qtof_etkdgv3_test.png
+  # Orbitrap:
+  python scripts/eval.py ./data/orbitrap_etkdgv3_test.pkl ./result/pred_orbitrap_etkdgv3_test.mgf \
+  --result_path ./eval_orbitrap_etkdgv3_test.csv --plot_path ./eval_orbitrap_etkdgv3_test.png
