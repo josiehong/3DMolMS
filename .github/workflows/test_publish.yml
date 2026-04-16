@@ -1,0 +1,80 @@
+name: Test publish to TestPyPI
+
+on:
+  push:
+    branches:
+      - main  # runs automatically on every merge to main
+  workflow_dispatch:  # also allows manual trigger from GitHub Actions UI
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  test-install:
+    name: Test installation from TestPyPI
+    needs: publish-testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install from TestPyPI
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --index-url https://test.pypi.org/simple/ \
+                      --extra-index-url https://pypi.org/simple/ \
+                      molnetpack
+
+      - name: Smoke test
+        run: |
+          python - <<'EOF'
+          import torch
+          from molnetpack import MolNet, __version__
+          print(f"molnetpack {__version__} imported successfully")
+          device = torch.device("cpu")
+          molnet_engine = MolNet(device, seed=42)
+          print("MolNet instantiated successfully")
+          EOF
