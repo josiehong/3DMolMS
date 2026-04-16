@@ -16,24 +16,11 @@ The changes log can be found at [./CHANGE_LOG.md](./CHANGE_LOG.md).
 
 ## Getting started
 
-**🧪 Source Code**
+### ☁️ Web service
 
-* Clone the repository for both training and inference functionality
-* [See detailed instructions in the document for source code](https://3dmolms.readthedocs.io/en/latest/sourcecode.html) 
+Access the no-installation web service via [Koina](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer) for quick inference with API support.
 
-📦 **PyPI Package**
-
-* Install `molnetpack` for easy inference and training with pre-trained models 
-* [See detailed instructions in the document for PyPI package](https://3dmolms.readthedocs.io/en/latest/molnetpack.html)
-
-☁️ **Web Service**
-
-* Access our no-installation web service with API support for inference
-* [See detailed instructions in the workflow on Konia](https://koina.wilhelmlab.org/docs#post-/3dmolms_qtof/infer) 
-
-## Quick start
-
-Install the package:
+### 📦 PyPI package
 
 ```bash
 pip install molnetpack
@@ -41,7 +28,7 @@ pip install molnetpack
 
 PyTorch must be installed separately — see the [official PyTorch site](https://pytorch.org/get-started/locally/) for the right command for your system.
 
-### Predict MS/MS spectra
+**Predict MS/MS spectra:**
 
 ```python
 import torch
@@ -60,7 +47,7 @@ pred_df = molnet_engine.pred_msms(
 )
 ```
 
-### Predict retention time (RT) and CCS
+**Predict retention time (RT) and CCS:**
 
 ```python
 molnet_engine.load_data("./examples/demo_input.csv")
@@ -68,15 +55,9 @@ rt_df  = molnet_engine.pred_rt(path_to_results="./output_rt.csv")
 ccs_df = molnet_engine.pred_ccs(path_to_results="./output_ccs.csv")
 ```
 
-### Train your own model
+**Train your own model:**
 
 ```python
-import torch
-from molnetpack import MolNet
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-molnet_engine = MolNet(device, seed=42)
-
 # Fine-tune from a pretrained checkpoint
 molnet_engine.train(
     task="msms",                                          # or "rt" / "ccs"
@@ -100,7 +81,12 @@ results_df = molnet_engine.evaluate(
 )
 ```
 
-See [examples/](./examples/) for more complete scripts, and the [full documentation](https://3dmolms.readthedocs.io/en/latest/) for dataset preparation, preprocessing, and advanced usage.
+See [examples/](./examples/) for more complete scripts and the [full documentation](https://3dmolms.readthedocs.io/en/latest/) for dataset preparation, preprocessing, and advanced usage.
+
+### 🧪 Source code
+
+Clone the repository for script-based training and advanced customization. See the [source code documentation](https://3dmolms.readthedocs.io/en/latest/sourcecode.html) for setup instructions.
+
 
 ## Citation
 
