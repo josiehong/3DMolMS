@@ -14,6 +14,9 @@ train:
   batch_size: 64
   num_workers: 0
   lr: 0.001
+  weight_decay: 0.01
+  augmentation: false
+  early_stop_patience: 60
 
 test:
   local_path: './check_point/molnet_rt_etkdgv3_tl.pt'

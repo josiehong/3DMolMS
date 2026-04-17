@@ -57,7 +57,27 @@ _METRIC_LABEL        = {"msms": "cosine",       "rt": "MAE",          "ccs": "MA
 
 
 class MolNet:
-    def __init__(self, device, seed):
+    def __init__(
+        self,
+        device,
+        seed,
+        data_config_path=None,
+        msms_config_path=None,
+        ccs_config_path=None,
+        rt_config_path=None,
+    ):
+        """
+        :param device: PyTorch device.
+        :param seed: Random seed.
+        :param data_config_path: Path to preprocessing/encoding config YAML.
+            Defaults to the bundled ``preprocess_etkdgv3.yml``.
+        :param msms_config_path: Path to MS/MS model config YAML.
+            Defaults to the bundled ``molnet.yml``.
+        :param ccs_config_path: Path to CCS model config YAML.
+            Defaults to the bundled ``molnet_ccs_tl.yml``.
+        :param rt_config_path: Path to RT model config YAML.
+            Defaults to the bundled ``molnet_rt_tl.yml``.
+        """
         self.version = __version__
         print("MolNetPack version:", self.version)
 
@@ -65,10 +85,10 @@ class MolNet:
         self.current_path = Path(__file__).parent
 
         # Configs (shared across inference and training)
-        self.data_config  = self._load_config("preprocess_etkdgv3.yml")
-        self.msms_config  = self._load_config("molnet.yml")
-        self.ccs_config   = self._load_config("molnet_ccs_tl.yml")
-        self.rt_config    = self._load_config("molnet_rt_tl.yml")
+        self.data_config  = self._load_config("preprocess_etkdgv3.yml", data_config_path)
+        self.msms_config  = self._load_config("molnet.yml",              msms_config_path)
+        self.ccs_config   = self._load_config("molnet_ccs_tl.yml",       ccs_config_path)
+        self.rt_config    = self._load_config("molnet_rt_tl.yml",        rt_config_path)
 
         # Inference state
         self.pkl_dict     = None
@@ -92,8 +112,8 @@ class MolNet:
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _load_config(self, filename):
-        path = self.current_path / "config" / filename
+    def _load_config(self, default_filename, override_path=None):
+        path = Path(override_path) if override_path else self.current_path / "config" / default_filename
         with open(path) as f:
             return yaml.safe_load(f)
 
@@ -390,7 +410,11 @@ class MolNet:
         print(f"{model.__class__.__name__}  #params: {num_params:,}")
 
         # --- Optimizer & scheduler ---
-        optimizer = optim.AdamW(model.parameters(), lr=config["train"]["lr"])
+        optimizer = optim.AdamW(
+            model.parameters(),
+            lr=config["train"]["lr"],
+            weight_decay=config["train"]["weight_decay"],
+        )
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             mode=_SCHEDULER_MODE[task],
@@ -421,7 +445,7 @@ class MolNet:
         best_metric      = _BEST_INIT[task]
         higher_is_better = _SCHEDULER_MODE[task] == "max"
         early_patience   = 0
-        early_limit      = _EARLY_STOP_PATIENCE[task]
+        early_limit      = config["train"].get("early_stop_patience", _EARLY_STOP_PATIENCE[task])
         label            = _METRIC_LABEL[task]
 
         for epoch in range(1, config["train"]["epochs"] + 1):
@@ -625,8 +649,9 @@ class MolNet:
             }
             encoder["All"] = False
             encoded = encoder[precursor_type]
-            train_set = MolMS_Dataset(train_path, encoded)
-            valid_set = MolMS_Dataset(valid_path, encoded)
+            augmentation = config["train"]["augmentation"]
+            train_set = MolMS_Dataset(train_path, data_augmentation=augmentation, precursor_type=encoded)
+            valid_set = MolMS_Dataset(valid_path, data_augmentation=False, precursor_type=encoded)
         elif task == "rt":
             train_set = MolRT_Dataset(train_path)
             valid_set = MolRT_Dataset(valid_path)

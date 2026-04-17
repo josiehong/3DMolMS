@@ -1,3 +1,4 @@
+* 2026.04.17 (dev): cap ETKDGv3 `maxIterations` to prevent hangs on difficult ring systems; add `MMFF` conformation as an option. 
 * 2026.04.15 (v1.2.2): reorganize source code (scripts consolidated under `scripts/`, package moved to top-level `molnetpack/`); add `train()` and `evaluate()` methods directly to `MolNet` so training and evaluation are available from the Python API without using CLI scripts; update all documentation and examples; add `scikit-learn` and `tqdm` to declared dependencies.
 * 2025.10.12 (v1.2.1): change the build-backend to "setuptools.build_meta"; fix the error of unmatched inputs in v1.2.0; apply `black` for better code format. 
 * 2025.4.28 (v1.2.0): update `MolConv` from version 2 to version 3; add online documentation; add scaler option for RT prediction but using scaler makes convergence harder. 

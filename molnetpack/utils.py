@@ -135,8 +135,10 @@ def train_step(model, device, loader, optimizer, batch_size, num_points, task):
                 loss.backward()
                 optimizer.step()
                 with torch.no_grad():
+                    pred_m = pred / torch.max(pred)
+                    pred_m = pred_m.cpu().apply_(lambda v: v if v > 0.01 else 0).to(device)
                     metric_sum += F.cosine_similarity(
-                        torch.pow(pred, 2), torch.pow(y, 2), dim=1
+                        torch.pow(pred_m, 2), torch.pow(y, 2), dim=1
                     ).mean().item()
             else:
                 y_scaled = model.scale(y) if model.scaler is not None else y

@@ -16,6 +16,9 @@ train:
   batch_size: 64
   num_workers: 0
   lr: 0.001
+  weight_decay: 0.01
+  augmentation: true
+  early_stop_patience: 10
 
 test: 
   local_path_qtof: './check_point/molnet_qtof_etkdgv3.pt'

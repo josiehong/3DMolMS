@@ -1,0 +1,195 @@
+# pretrain ===========================================================
+qm9:
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  min_molmass: 50
+  max_molmass: 1500
+  max_atom_num: 300
+  min_atom_num: 10
+
+# qtof ===============================================================
+agilent_qtof: 
+  intrument_type: ['ESI-QTOF']
+  instrument: [Unknown]
+  ms_level: '2'
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 10
+
+nist_qtof: 
+  intrument_type: ['Q-TOF']
+  instrument: [Agilent QTOF 6530]
+  ms_level: 'MS2'
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 10
+
+mona_qtof:
+  instrument_type: ['LC-ESI-QTOF', 
+                    'ESI-QFT'] 
+  instrument: ['Agilent 6530 Q-TOF', 'Waters Xevo G2 Q-Tof', 'Agilent qTOF 6545', 'Agilent 6550 iFunnel']
+  ms_level: 'MS2'
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 10
+
+waters_qtof:
+  intrument_type: ['QTOF']
+  instrument: ['Waters QTOF']
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 10
+
+gnps_qtof: 
+  instrument_type: ['hcd']
+  instrument: ['qtof', 'quadrupole']
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 10
+
+# orbitrap =====================================================================
+nist_orbitrap: 
+  instrument_type: HCD
+  instrument: ['Thermo Finnigan Elite Orbitrap']
+  ms_level: 'MS2'
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 5
+
+nist23_orbitrap: 
+  instrument_type: HCD
+  instrument: ['Thermo Finnigan Elite Orbitrap']
+  ms_level: 'MS2'
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 5
+
+mona_orbitrap:
+  intrument_type: ['LC-ESI-QFT', 'LC-ESI-Q-Orbitrap']
+  instrument: ['Thermo Q Exactive HF', 'Q Exactive Orbitrap (Thermo Scientific)', 'Q Exactive Plus Orbitrap Thermo Scientific']
+  ms_level: 'MS2'
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 5
+
+gnps_orbitrap: 
+  instrument_type: ['hcd']
+  instrument: ['orbitrap']
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 5
+
+# retention time ===============================================================
+metlin_rt:
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  max_atom_num: 300
+  min_atom_num: 10
+
+# collision cross section =======================================================
+allccs:
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  max_atom_num: 300
+  min_atom_num: 10
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+
+# reference metabolite ==========================================================
+hmdb: 
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  max_atom_num: 300
+  min_atom_num: 10
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+
+refmet:
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  max_atom_num: 300
+  min_atom_num: 10
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+
+# test ==========================================================================
+all:
+  atom_type: ['C', 'O', 'N', 'H', 'P', 'S', 'F', 'Cl', 'B', 'Br', 'I']
+  precursor_type: ['[M+H]+', '[M-H]-', '[M+H-H2O]+', '[M+Na]+', '[M+2H]2+']
+  min_mz: 50
+  max_mz: 1500
+  min_peak_num: 5
+  max_atom_num: 300
+  min_atom_num: 10
+  ppm_tolerance: 10
+  
+# encoding ======================================================================
+encoding:
+  resolution: 0.2
+  max_mz: 1500
+
+  conf_type: 'mmff' 
+  atom_type: 
+    'C': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    'H': [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    'O': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    'N': [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+    'F': [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+    'S': [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+    'Cl': [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
+    'P': [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
+    'B': [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
+    'Br': [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+    'I': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+  max_atom_num: 300
+
+  precursor_type:
+    '[M+H]+': [1, 0, 0, 0, 0]
+    '[M-H]-': [0, 1, 0, 0, 0]
+    '[M+H-H2O]+': [0, 0, 1, 0, 0]
+    '[M+Na]+': [0, 0, 0, 1, 0]
+    '[M+2H]2+': [0, 0, 0, 0, 1]
+
+  type2charge:
+    '[M+H]+': '1'
+    '[M-H]-': '1'
+    '[M+H-H2O]+': '1'
+    '[M+Na]+': '1'
+    '[M+2H]2+': '2'

@@ -166,6 +166,7 @@ def conformation_array(x, conf_type):
         mol_from_smiles = Chem.AddHs(mol)
         ps = AllChem.ETKDGv3()
         ps.randomSeed = 0xF00D
+        ps.maxIterations = 1000  # prevent rare infinite loops on difficult ring systems
         AllChem.EmbedMolecule(mol_from_smiles, ps)
 
     elif conf_type == "2d":
@@ -175,6 +176,17 @@ def conformation_array(x, conf_type):
 
     elif conf_type == "origin":
         mol_from_smiles = Chem.AddHs(x)
+
+    elif conf_type == "mmff":
+        # ETKDGv3 for initial geometry, then MMFF94 force-field optimisation.
+        mol = Chem.MolFromSmiles(x)
+        mol_from_smiles = Chem.AddHs(mol)
+        ps = AllChem.ETKDGv3()
+        ps.randomSeed = 0xF00D
+        ps.maxIterations = 1000
+        if AllChem.EmbedMolecule(mol_from_smiles, ps) == -1:
+            return False, None, None
+        AllChem.MMFFOptimizeMolecule(mol_from_smiles)
 
     elif conf_type == "omega":
         raise ValueError("OMEGA conformation will be supported soon. ")
