@@ -4,8 +4,7 @@ model:
   max_atom_num: 300
   resolution: 0.2
   max_mz: 1500
-  batch_size: 64
-  emb_dim: 2048 
+  emb_dim: 2048
   k: 5
   dropout: 0.2
   encode_layers: [64, 64, 128, 256, 512, 1024]

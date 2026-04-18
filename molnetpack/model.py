@@ -233,7 +233,6 @@ class MolNet_MS(nn.Module):
         x = self.decoder(x)
         return x
 
-
 # -------------------------------------------------------------------------
 # >>>                             3DMol_Oth                             <<<
 # 1) This is the model for other regression tasks, including pretrain,

@@ -135,7 +135,8 @@ def train_step(model, device, loader, optimizer, batch_size, num_points, task):
                 loss.backward()
                 optimizer.step()
                 with torch.no_grad():
-                    pred_m = pred / torch.max(pred)
+                    pred_max = pred.max(dim=1, keepdim=True).values.clamp(min=1e-8)
+                    pred_m = pred / pred_max
                     pred_m = pred_m.cpu().apply_(lambda v: v if v > 0.01 else 0).to(device)
                     metric_sum += F.cosine_similarity(
                         torch.pow(pred_m, 2), torch.pow(y, 2), dim=1
@@ -170,7 +171,8 @@ def eval_step(model, device, loader, batch_size, num_points, task):
                 pred = model(x, mask, env, idx_base)
 
                 if task == "msms":
-                    pred = pred / torch.max(pred)
+                    pred_max = pred.max(dim=1, keepdim=True).values.clamp(min=1e-8)
+                    pred = pred / pred_max
                     pred = pred.cpu().apply_(lambda v: v if v > 0.01 else 0).to(device)
                     metric_sum += F.cosine_similarity(
                         torch.pow(pred, 2), torch.pow(y, 2), dim=1

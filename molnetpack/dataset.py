@@ -40,6 +40,7 @@ class MolMS_Dataset(Dataset):
                     {
                         "title": d["title"] + "_f",
                         "mol": flipping_mol_arr,
+                        "mask": d["mask"],        # mask is identical for flipped mol
                         "spec": d["spec"],
                         "env": d["env"],
                     }
