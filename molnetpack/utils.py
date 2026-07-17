@@ -26,7 +26,6 @@ def make_idx_base(batch_size, num_points, device):
 # ---------------------------------------------------------------------------
 
 def pred_step(model, device, loader, batch_size, num_points):
-    assert batch_size == 1, "batch_size should be 1 for prediction"
     model.eval()
     id_list, pred_list = [], []
 
@@ -40,7 +39,10 @@ def pred_step(model, device, loader, batch_size, num_points):
 
             with torch.no_grad():
                 pred = model(x, mask, env, idx_base)
-                pred = pred / torch.max(pred)
+                # Normalize each spectrum by its own max so batched inference
+                # (batch_size > 1) matches single-molecule results. The previous
+                # global torch.max(pred) forced batch_size == 1.
+                pred = pred / pred.amax(dim=1, keepdim=True).clamp(min=1e-12)
 
             pred = torch.pow(pred, 2)
             pred = pred.detach().cpu().apply_(lambda v: v if v > 0.01 else 0)
