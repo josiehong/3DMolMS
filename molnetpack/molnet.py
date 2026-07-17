@@ -4,6 +4,8 @@ import requests
 import zipfile
 from pathlib import Path
 
+import platformdirs
+
 import numpy as np
 import pandas as pd
 import yaml
@@ -169,6 +171,21 @@ class MolNet:
     # Checkpoint download (used by pred_* methods)
     # ------------------------------------------------------------------
 
+    def _checkpoint_dir(self):
+        """Directory where downloaded checkpoints are cached.
+
+        Resolution order:
+          1. ``$MOLNETPACK_HOME`` — explicit override (e.g. a shared cache on a server).
+          2. A per-user cache directory following OS conventions
+             (``~/.cache/molnetpack`` on Linux, ``~/Library/Caches/molnetpack``
+             on macOS, ``%LOCALAPPDATA%\\molnetpack\\Cache`` on Windows).
+
+        Checkpoints are deliberately kept out of the installed package
+        directory, which may be read-only and is wiped on upgrade/reinstall.
+        """
+        override = os.environ.get("MOLNETPACK_HOME")
+        return Path(override) if override else Path(platformdirs.user_cache_dir("molnetpack"))
+
     def _get_checkpoint_path(self, task_name, instrument=None):
         task_map = {
             "msms": (
@@ -184,7 +201,19 @@ class MolNet:
                 else self.msms_config["test"]["local_path_orbitrap"]
             ),
         }
-        return str(self.current_path / task_map[task_name])
+        rel = task_map[task_name]
+
+        # An explicit $MOLNETPACK_HOME is authoritative — do not fall back to a
+        # possibly-stale in-package checkpoint.
+        if not os.environ.get("MOLNETPACK_HOME"):
+            # Default (no override): reuse a checkpoint already present in the
+            # legacy in-package location (editable/dev checkouts) to avoid a
+            # multi-GB re-download; otherwise use the per-user cache directory.
+            legacy_path = self.current_path / rel
+            if legacy_path.exists():
+                return str(legacy_path)
+
+        return str(self._checkpoint_dir() / os.path.basename(rel))
 
     def _ensure_checkpoint(self, checkpoint_path, task_name, instrument=None):
         if os.path.exists(checkpoint_path):
@@ -210,6 +239,7 @@ class MolNet:
                         f.write(chunk)
             with zipfile.ZipFile(zip_path, "r") as zf:
                 zf.extractall(os.path.dirname(checkpoint_path))
+            os.remove(zip_path)  # don't keep the archive around in the cache
         except (requests.RequestException, zipfile.BadZipFile) as e:
             # Remove partial/corrupt downloads so the next attempt starts clean.
             if os.path.exists(zip_path):
