@@ -275,10 +275,10 @@ class MolConv3(nn.Module):
         dist, gm2, feat_c, feat_n = self._generate_feat(
             x, idx_base, k=self.k, remove_xyz=self.remove_xyz
         )
-        """Returned features: 
+        """Returned features:
 		dist: torch.Size([batch_size, 1, point_num, k])
-		gm2: torch.Size([batch_size, k, point_num, k]) 
-		feat_c: torch.Size([batch_size, in_dim, point_num, k]) 
+		gm2: torch.Size([batch_size, k, point_num, k])
+		feat_c: torch.Size([batch_size, in_dim, point_num, k])
 		feat_n: torch.Size([batch_size, in_dim, point_num, k])
 		"""
         feat_n = torch.cat(
@@ -351,6 +351,153 @@ class MolConv3(nn.Module):
             feat_n = graph_feat.permute(0, 3, 1, 2).contiguous()
 
         return dist, gm2, feat_c, feat_n
+
+    def __repr__(self):
+        return (
+            self.__class__.__name__
+            + " k = "
+            + str(self.k)
+            + " ("
+            + str(self.in_dim)
+            + " -> "
+            + str(self.out_dim)
+            + ")"
+        )
+
+
+class MolConv4(nn.Module):
+    """SE(3)-invariant variant of MolConv3.
+
+    The only change from MolConv3 is in the Gram matrix computation.
+    When remove_xyz=True (first encoder layer, input contains raw xyz in
+    dims 0–2), the Gram matrix is built from relative displacement vectors
+    (xj − xi) instead of absolute position vectors.  The dot product
+    <(xj−xi), (xk−xi)> encodes the angle at atom i between neighbours j
+    and k — a quantity that is invariant to both translation and rotation.
+
+    Combined with remove_xyz=True (which strips dims 0–2 from the node
+    features), the first layer becomes fully SE(3)-invariant.  All
+    subsequent layers receive features that were already produced by an
+    SE(3)-invariant operation, so invariance propagates through the
+    entire encoder without any further changes.
+
+    For remove_xyz=False layers (all layers after the first), the input
+    has no xyz — the Gram matrix falls back to the MolConv3 behaviour
+    (feature-space dot products), which is rotation-invariant by
+    construction since the features themselves are invariant.
+    """
+
+    def __init__(self, in_dim, out_dim, point_num, k, remove_xyz=False):
+        super(MolConv4, self).__init__()
+        self.k = k
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        self.remove_xyz = remove_xyz
+
+        self.dist_ff = nn.Sequential(
+            nn.Conv2d(1, 1, kernel_size=1, bias=False),
+            nn.LayerNorm((1, point_num, k)),
+            nn.Sigmoid(),
+        )
+
+        if remove_xyz:
+            self.center_ff = nn.Sequential(
+                nn.Conv2d(in_dim - 3, in_dim + k - 3, kernel_size=1, bias=False),
+                nn.LayerNorm((in_dim + k - 3, point_num, k)),
+                nn.Sigmoid(),
+            )
+            self.update_ff = nn.Sequential(
+                nn.Conv2d(in_dim + k - 3, out_dim, kernel_size=1, bias=False),
+                nn.LayerNorm((out_dim, point_num, k)),
+                nn.Softplus(beta=1.0, threshold=20.0),
+            )
+        else:
+            self.center_ff = nn.Sequential(
+                nn.Conv2d(in_dim, in_dim + k, kernel_size=1, bias=False),
+                nn.LayerNorm((in_dim + k, point_num, k)),
+                nn.Sigmoid(),
+            )
+            self.update_ff = nn.Sequential(
+                nn.Conv2d(in_dim + k, out_dim, kernel_size=1, bias=False),
+                nn.LayerNorm((out_dim, point_num, k)),
+                nn.Softplus(beta=1.0, threshold=20.0),
+            )
+
+    def forward(
+        self, x: torch.Tensor, idx_base: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        dist, gm2, feat_c, feat_n = self._generate_feat(
+            x, idx_base, k=self.k, remove_xyz=self.remove_xyz
+        )
+        feat_n = torch.cat(
+            (feat_n, gm2), dim=1
+        )  # [batch_size, in_dim+k, point_num, k]
+        feat_c = self.center_ff(feat_c)
+        w = self.dist_ff(dist)
+
+        feat = w * feat_n + feat_c
+        feat = self.update_ff(feat)
+
+        # Masked average pooling over neighbours
+        mask_expanded = mask.unsqueeze(1).unsqueeze(-1).expand_as(feat)
+        feat = feat.masked_fill(~mask_expanded, 0.0)
+        valid_counts = mask.sum(dim=1, keepdim=True).clamp(min=0.1)
+        feat = feat.sum(dim=3) / valid_counts.unsqueeze(2)  # [batch_size, out_dim, point_num]
+        return feat
+
+    def _generate_feat(
+        self, x: torch.Tensor, idx_base: torch.Tensor, k: int, remove_xyz: bool
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        batch_size, num_dims, num_points = x.size()
+
+        # kNN graph and distances
+        inner = -2 * torch.matmul(x.transpose(2, 1), x)
+        xx = torch.sum(x**2, dim=1, keepdim=True)
+        pairwise_distance = -xx - inner - xx.transpose(2, 1)
+        dist, idx = pairwise_distance.topk(k=k, dim=2)  # (batch_size, num_points, k)
+        dist = -dist
+
+        idx = idx + idx_base
+        idx = idx.view(-1)
+
+        x = x.transpose(2, 1).contiguous()  # [batch_size*num_points, num_dims]
+        graph_feat = x.view(batch_size * num_points, -1)[idx, :]
+        graph_feat = graph_feat.view(batch_size, num_points, k, num_dims)
+
+        x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, k, 1)
+
+        if remove_xyz:
+            # SE(3)-invariant Gram matrix: relative displacement vectors (xj − xi).
+            # <(xj−xi), (xk−xi)> encodes the angle ∠jik — invariant to rotation.
+            rel_xyz = graph_feat[:, :, :, :3] - x[:, :, :, :3]  # [B, N, k, 3]
+            gm_matrix = torch.matmul(rel_xyz, rel_xyz.permute(0, 1, 3, 2))  # [B, N, k, k]
+            gm_matrix = F.normalize(gm_matrix, dim=1)
+            sub_feat = gm_matrix[:, :, :, 0].unsqueeze(3)
+            sub_gm_matrix = torch.matmul(sub_feat, sub_feat.permute(0, 1, 3, 2))
+            sub_gm_matrix = F.normalize(sub_gm_matrix, dim=1)
+
+            return (
+                dist.unsqueeze(3).permute(0, 3, 1, 2).contiguous(),
+                sub_gm_matrix.permute(0, 3, 1, 2).contiguous(),
+                x[:, :, :, 3:].permute(0, 3, 1, 2).contiguous(),
+                graph_feat[:, :, :, 3:].permute(0, 3, 1, 2).contiguous(),
+            )
+        else:
+            # Subsequent layers: input has no xyz.  Features are already
+            # SE(3)-invariant (produced by a prior MolConv4 with remove_xyz=True),
+            # so feature-space dot products are rotation-invariant by construction.
+            gm_matrix = torch.matmul(graph_feat, graph_feat.permute(0, 1, 3, 2))
+            gm_matrix = F.normalize(gm_matrix, dim=1)
+            sub_feat = gm_matrix[:, :, :, 0].unsqueeze(3)
+            sub_gm_matrix = torch.matmul(sub_feat, sub_feat.permute(0, 1, 3, 2))
+            sub_gm_matrix = F.normalize(sub_gm_matrix, dim=1)
+
+            return (
+                dist.unsqueeze(3).permute(0, 3, 1, 2).contiguous(),
+                sub_gm_matrix.permute(0, 3, 1, 2).contiguous(),
+                x.permute(0, 3, 1, 2).contiguous(),
+                graph_feat.permute(0, 3, 1, 2).contiguous(),
+            )
 
     def __repr__(self):
         return (

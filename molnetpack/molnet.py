@@ -143,9 +143,11 @@ class MolNet:
                 k: v for k, v in ckpt["model_state_dict"].items()
                 if not k.startswith("decoder")
             }
-            for v in encoder_dict.values():
-                v.requires_grad = False
             model.load_state_dict(encoder_dict, strict=False)
+            # Freeze the encoder parameters in the model (not the checkpoint tensors).
+            for name, param in model.named_parameters():
+                if not name.startswith("decoder"):
+                    param.requires_grad = False
             return None
         else:
             model.load_state_dict(ckpt["model_state_dict"])
@@ -488,7 +490,10 @@ class MolNet:
                 print("Early stop!")
                 break
 
-        # Store the trained model so pred_* methods can use it immediately
+        # Reload best checkpoint weights before storing so pred_* methods use the
+        # best-validation model, not the final (possibly worse) last-epoch model.
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            self._load_weights(model, checkpoint_path)
         setattr(self, self._task_model_attr(task), model)
         print(f"\nTraining complete. Best {label}: {best_metric:.4f}")
         return best_metric
@@ -526,7 +531,11 @@ class MolNet:
             binned = bin_spectrum(pred["m/z array"], pred["intensity array"])
             if binned is None or len(gt_vec) != len(binned):
                 continue
-            sim = cosine_similarity(gt_vec, binned)
+            # gt_vec is sqrt-normalised (stored by generate_ms); binned is
+            # intensity-space (pred_step squares model output).  Square gt_vec
+            # so both vectors are in intensity space, consistent with the
+            # cosine(pred², y²) metric used during training.
+            sim = cosine_similarity(np.array(gt_vec) ** 2, binned)
             if sim is None:
                 continue
             rows.append({
@@ -662,7 +671,7 @@ class MolNet:
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True,
                                   num_workers=num_workers, drop_last=True)
         valid_loader = DataLoader(valid_set, batch_size=batch_size, shuffle=False,
-                                  num_workers=num_workers, drop_last=True)
+                                  num_workers=num_workers, drop_last=False)
         return train_loader, valid_loader
 
 
