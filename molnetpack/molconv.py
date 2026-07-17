@@ -427,7 +427,7 @@ class MolConv4(nn.Module):
         self, x: torch.Tensor, idx_base: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
         dist, gm2, feat_c, feat_n = self._generate_feat(
-            x, idx_base, k=self.k, remove_xyz=self.remove_xyz
+            x, idx_base, mask, k=self.k, remove_xyz=self.remove_xyz
         )
         feat_n = torch.cat(
             (feat_n, gm2), dim=1
@@ -446,16 +446,47 @@ class MolConv4(nn.Module):
         return feat
 
     def _generate_feat(
-        self, x: torch.Tensor, idx_base: torch.Tensor, k: int, remove_xyz: bool
+        self, x: torch.Tensor, idx_base: torch.Tensor, mask: torch.Tensor,
+        k: int, remove_xyz: bool
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         batch_size, num_dims, num_points = x.size()
+
+        if remove_xyz:
+            # Center xyz (dims 0-2) on the real-atom centroid. Distances and the
+            # relative-displacement Gram matrix are subtractions of coordinates;
+            # when the molecule sits far from the origin these cancel large
+            # near-equal values and lose precision under translation. Centering
+            # keeps them small and makes translation invariance numerically
+            # exact — the centroid shifts with any input translation, so the
+            # centered coordinates are identical. Padding atoms are excluded
+            # from the centroid via the mask.
+            m = mask.view(batch_size, 1, num_points).to(x.dtype)
+            centroid = (x[:, :3, :] * m).sum(dim=2, keepdim=True) / m.sum(
+                dim=2, keepdim=True
+            ).clamp(min=1.0)
+            x = torch.cat([x[:, :3, :] - centroid, x[:, 3:, :]], dim=1)
 
         # kNN graph and distances
         inner = -2 * torch.matmul(x.transpose(2, 1), x)
         xx = torch.sum(x**2, dim=1, keepdim=True)
         pairwise_distance = -xx - inner - xx.transpose(2, 1)
-        dist, idx = pairwise_distance.topk(k=k, dim=2)  # (batch_size, num_points, k)
-        dist = -dist
+
+        # Exclude zero-padding atoms from REAL atoms' kNN: padding sits at the
+        # coordinate origin and would otherwise pollute real neighbourhoods and
+        # break translation invariance (a real→padding distance depends on the
+        # real atom's absolute position). Padding *query* rows keep selecting
+        # padding neighbours (distance 0), so they stay inert — all-zero and
+        # constant — exactly as before masking. That matters because the Gram
+        # and LayerNorm normalizations run over the atom dimension: a padding
+        # row that varied under translation would leak into every real atom.
+        # Gathering the unmasked distances at the chosen indices keeps -inf out
+        # of the feature pipeline even when a molecule has fewer than k atoms.
+        valid_col = mask.unsqueeze(1)  # [batch_size, 1, num_points] neighbour cols
+        real_row  = mask.unsqueeze(2)  # [batch_size, num_points, 1] real query rows
+        masked_distance = pairwise_distance.masked_fill(~valid_col, float("-inf"))
+        masked_distance = torch.where(real_row, masked_distance, pairwise_distance)
+        _, idx = masked_distance.topk(k=k, dim=2)  # (batch_size, num_points, k)
+        dist = -torch.gather(pairwise_distance, 2, idx)
 
         idx = idx + idx_base
         idx = idx.view(-1)
