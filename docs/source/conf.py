@@ -4,7 +4,16 @@
 project = "3DMolMS"
 copyright = "2023, Yuhui Hong"
 author = "Yuhui Hong"
-version = "v1.3.0"
+
+# Single source of truth: read the package version from molnetpack/_version.py.
+# File read (not import) so the docs build without torch installed.
+import re
+from pathlib import Path
+version = re.search(
+    r'__version__\s*=\s*"([^"]+)"',
+    (Path(__file__).resolve().parents[2] / "molnetpack" / "_version.py").read_text(),
+).group(1)
+release = version
 
 # -- General configuration
 extensions = [

@@ -8,7 +8,7 @@
 
 ## Latest release
 
-3DMolMS v1.3.0 is now available on PyPI!
+3DMolMS v1.3.1 is now available on PyPI!
 
 This release makes the 3D molecular encoder correctly **E(3)-invariant** (to rotation, reflection, and translation) — the previous encoder's output depended on a molecule's absolute position in space. All checkpoints (MS/MS for QTOF and Orbitrap, RT, and CCS) have been retrained with the corrected encoder. This release also adds batched MS/MS inference, in-memory input, per-user checkpoint caching, and optional self-supervised pretraining.
 

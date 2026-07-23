@@ -48,6 +48,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true   # don't fail if this version was already uploaded
 
   test-install:
     name: Test installation from TestPyPI
