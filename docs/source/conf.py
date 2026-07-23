@@ -15,6 +15,9 @@ version = re.search(
 ).group(1)
 release = version
 
+# Title shown in the browser tab and the sidebar header.
+html_title = "3DMolMS Manual"
+
 # -- General configuration
 extensions = [
     "sphinx.ext.duration",

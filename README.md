@@ -126,28 +126,8 @@ See the [full documentation](https://3dmolms.readthedocs.io/en/latest/) for data
 
 If you use 3DMolMS in your research, please cite:
 
-```
-@article{hong20233dmolms,
-  title={3DMolMS: prediction of tandem mass spectra from 3D molecular conformations},
-  author={Hong, Yuhui and Li, Sujun and Welch, Christopher J and Tichy, Shane and Ye, Yuzhen and Tang, Haixu},
-  journal={Bioinformatics},
-  volume={39},
-  number={6},
-  pages={btad354},
-  year={2023},
-  publisher={Oxford University Press}
-}
-@article{hong2024enhanced,
-  title={Enhanced structure-based prediction of chiral stationary phases for chromatographic enantioseparation from 3D molecular conformations},
-  author={Hong, Yuhui and Welch, Christopher J and Piras, Patrick and Tang, Haixu},
-  journal={Analytical Chemistry},
-  volume={96},
-  number={6},
-  pages={2351--2359},
-  year={2024},
-  publisher={ACS Publications}
-}
-```
+1. Hong, Y., Li, S., Welch, C.J., Tichy, S., Ye, Y. and Tang, H., 2023. 3DMolMS: prediction of tandem mass spectra from 3D molecular conformations. *Bioinformatics*, 39(6), p.btad354.
+2. Hong, Y., Welch, C.J., Piras, P. and Tang, H., 2024. Enhanced structure-based prediction of chiral stationary phases for chromatographic enantioseparation from 3D molecular conformations. *Analytical Chemistry*, 96(6), pp.2351-2359.
 
 ## License
 
