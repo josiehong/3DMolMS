@@ -1,7 +1,7 @@
-Retention time prediction
-=========================
+Retention time model training
+==============================
 
-3DMolMS can be used to predict MS/MS-related properties, such as retention time (RT) and collision cross section (CCS). This guide shows how to train a model for RT prediction and CCS prediction, and how to transfer these models to your own RT and CCS dataset.
+3DMolMS can predict MS/MS-related molecular properties such as retention time (RT). This guide shows how to train an RT model — from scratch or by transfer learning from an MS/MS model — and apply it to your own RT dataset.
 
 All models mentioned can be downloaded from `release v1.3.1 <https://github.com/JosieHong/3DMolMS/releases/tag/v1.3.1>`_.
 
