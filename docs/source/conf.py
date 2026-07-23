@@ -24,7 +24,12 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
+    "myst_parser",  # render Markdown pages (e.g. the encoder doc)
 ]
+
+# Generate anchors for headings (h1-h3) so in-page Markdown links like
+# [text](#section-slug) in encoder.md resolve.
+myst_heading_anchors = 3
 
 # For autodoc to work with modules that are not installed, we need to mock them before import molnetpack.
 autodoc_mock_imports = [

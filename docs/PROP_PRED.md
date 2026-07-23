@@ -1,6 +1,6 @@
 # Molecular Properties Prediction using 3DMolMS
 
-3DMolMS can be used to predict MS/MS-related properties, such as retention time (RT) and collision cross section (CCS). This file shows how to train a model for [[RT prediction]](#retention-time-prediction) and [[CCS prediction]](#cross-collision-section-prediction), and how to [[transfer these models to your own RT and CCS dataset]](#fine-tune-on-your-own-data). All the following models can be downloaded from [[release v1.3.0]](https://github.com/JosieHong/3DMolMS/releases/tag/v1.3.0). 
+3DMolMS can be used to predict MS/MS-related properties, such as retention time (RT) and collision cross section (CCS). This file shows how to train a model for [[RT prediction]](#retention-time-prediction) and [[CCS prediction]](#cross-collision-section-prediction), and how to [[transfer these models to your own RT and CCS dataset]](#fine-tune-on-your-own-data). All the following models can be downloaded from [[release v1.3.1]](https://github.com/JosieHong/3DMolMS/releases/tag/v1.3.1). 
 
 ## Retention time prediction
 
