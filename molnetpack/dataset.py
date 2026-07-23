@@ -247,7 +247,7 @@ class MolSSL_Dataset(Dataset):
 
     Zeroing xyz of masked atoms is essential: the encoder cannot read
     the coordinates directly and must infer the masked atom's location
-    from its unmasked chemical context.  Because MolConv4 is SE(3)-
+    from its unmasked chemical context.  Because MolConv2 is E(3)-
     invariant and distances are also SE(3)-invariant, the encoder–head
     mapping is consistent regardless of molecular orientation.
 

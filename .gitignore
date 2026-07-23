@@ -128,10 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Checkpoint files
-dist/
-release/
-src/molnetpack/check_point/
 
-.DS_Store
-molnetpack/.DS_Store
+
+dist/
+check_point/
+data/*

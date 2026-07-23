@@ -154,10 +154,14 @@ class MolNet:
                 if not k.startswith("decoder")
             }
             model.load_state_dict(encoder_dict, strict=False)
-            # Freeze the encoder parameters in the model (not the checkpoint tensors).
-            for name, param in model.named_parameters():
-                if not name.startswith("decoder"):
-                    param.requires_grad = False
+            # Freeze the encoder parameters in the model (not the checkpoint tensors),
+            # unless MOLNET_NO_FREEZE=1 is set (unfrozen full fine-tune).
+            if os.environ.get("MOLNET_NO_FREEZE") == "1":
+                print("MOLNET_NO_FREEZE=1: encoder loaded from transfer source but NOT frozen (full fine-tune)")
+            else:
+                for name, param in model.named_parameters():
+                    if not name.startswith("decoder"):
+                        param.requires_grad = False
             return None
         else:
             model.load_state_dict(ckpt["model_state_dict"])
@@ -253,7 +257,7 @@ class MolNet:
         self._ensure_checkpoint(checkpoint_path, task_name, instrument)
         model = getattr(self, self._task_model_attr(task_name) if task_name != "save_feat" else "encoder")
         model.load_state_dict(
-            torch.load(checkpoint_path, map_location=self.device, weights_only=True)["model_state_dict"]
+            torch.load(checkpoint_path, map_location=self.device, weights_only=False)["model_state_dict"]
         )
 
     # ------------------------------------------------------------------

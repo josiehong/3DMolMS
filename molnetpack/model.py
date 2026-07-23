@@ -4,42 +4,47 @@ import torch.nn.functional as F
 from decimal import *
 from typing import Tuple
 
-# from .molconv import MolConv, MolConv2, MolConv3
-from .molconv import MolConv4
+# encoder layers: MolConv2 (v2, E(3)-invariant, default); MolConv1 (v1, legacy absolute-Gram).
+# NB import MolConv1 explicitly for the v1 path — bare `MolConv` is aliased to MolConv2.
+from .molconv import MolConv1, MolConv2
 
 
 # ----------------------------------------
 # >>>           encoder part           <<<
 # ----------------------------------------
 class Encoder(nn.Module):
-    def __init__(self, in_dim, layers, emb_dim, point_num, k):
+    def __init__(self, in_dim, layers, emb_dim, point_num, k, chirality=False,
+                 encoder_version=2):
         super(Encoder, self).__init__()
         self.emb_dim = emb_dim
-        self.hidden_layers = nn.ModuleList(
-            [
-                MolConv4(
-                    in_dim=in_dim,
-                    out_dim=layers[0],
-                    point_num=point_num,
-                    k=k,
-                    remove_xyz=True,
-                )
-            ]
-        )
-        for i in range(1, len(layers)):
-            if i == 1:
+        self.encoder_version = int(encoder_version)
+        # chirality=True -> SE(3) (reflection-sensitive, chiral tasks); False -> E(3) (default).
+        # Only the first layer sees xyz, so it carries the flag.
+        if self.encoder_version == 1:
+            # Legacy v1 (MolConv1): absolute-position Gram, BatchNorm, not E(3).
+            self.hidden_layers = nn.ModuleList(
+                [MolConv1(in_dim=in_dim, out_dim=layers[0], k=k, remove_xyz=True)]
+            )
+            for i in range(1, len(layers)):
                 self.hidden_layers.append(
-                    MolConv4(
-                        in_dim=layers[i - 1],
-                        out_dim=layers[i],
+                    MolConv1(in_dim=layers[i - 1], out_dim=layers[i], k=k, remove_xyz=False)
+                )
+        else:
+            self.hidden_layers = nn.ModuleList(
+                [
+                    MolConv2(
+                        in_dim=in_dim,
+                        out_dim=layers[0],
                         point_num=point_num,
                         k=k,
-                        remove_xyz=False,
+                        remove_xyz=True,
+                        chirality=chirality,
                     )
-                )
-            else:
+                ]
+            )
+            for i in range(1, len(layers)):
                 self.hidden_layers.append(
-                    MolConv4(
+                    MolConv2(
                         in_dim=layers[i - 1],
                         out_dim=layers[i],
                         point_num=point_num,
@@ -63,10 +68,11 @@ class Encoder(nn.Module):
     ) -> torch.Tensor:
         xs = []
         for i, hidden_layer in enumerate(self.hidden_layers):
-            if i == 0:
-                tmp_x = hidden_layer(x, idx_base, mask)
+            inp = x if i == 0 else xs[-1]
+            if self.encoder_version == 1:
+                tmp_x = hidden_layer(inp, idx_base)          # v1 layers take no mask
             else:
-                tmp_x = hidden_layer(xs[-1], idx_base, mask)
+                tmp_x = hidden_layer(inp, idx_base, mask)
             xs.append(tmp_x)
 
         x = torch.cat(xs, dim=1)  # torch.Size([batch_size, emb_dim, point_num])
@@ -185,6 +191,8 @@ class MolNet_MS(nn.Module):
             emb_dim=int(config["emb_dim"]),
             point_num=int(config["max_atom_num"]),
             k=int(config["k"]),
+            chirality=bool(config.get("chirality", False)),
+            encoder_version=int(config.get("encoder_version", 2)),
         )
         self.decoder = MSDecoder(
             in_dim=int(config["emb_dim"] + config["add_num"]),
@@ -259,6 +267,8 @@ class MolNet_Oth(nn.Module):
             emb_dim=int(config["emb_dim"]),
             point_num=int(config["max_atom_num"]),
             k=int(config["k"]),
+            chirality=bool(config.get("chirality", False)),
+            encoder_version=int(config.get("encoder_version", 2)),
         )
         self.decoder = MSDecoder(
             in_dim=int(config["emb_dim"] + config["add_num"]),
@@ -375,7 +385,7 @@ class MolNet_Oth(nn.Module):
 #   For each (masked, unmasked) atom pair, predict the Euclidean distance
 #   from per-atom encoder features.  The encoder must infer the masked
 #   atom's 3D location from its chemical context.
-#   Valid because MolConv4 is SE(3)-invariant and distances are too.
+#   Valid because MolConv2 is E(3)-invariant and distances are too.
 # -------------------------------------------------------------------------
 class MolNet_SSL(nn.Module):
     """Encoder + distance head for masked distance reconstruction pretraining.
@@ -397,6 +407,8 @@ class MolNet_SSL(nn.Module):
             emb_dim=emb_dim,
             point_num=int(config["max_atom_num"]),
             k=int(config["k"]),
+            chirality=bool(config.get("chirality", False)),
+            encoder_version=int(config.get("encoder_version", 2)),
         )
         self.distance_head = nn.Sequential(
             nn.Linear(emb_dim * 2, 256),
