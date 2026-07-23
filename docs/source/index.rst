@@ -29,6 +29,7 @@ This document provides a guide to using 3DMolMS for inference through the ``moln
    :caption: Addtional information
 
    supported_formats
+   encoder
 
 References
 ----------
