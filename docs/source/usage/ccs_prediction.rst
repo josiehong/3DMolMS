@@ -3,7 +3,7 @@ Collision cross-collision section prediction
 
 3DMolMS can be used to predict MS/MS-related properties, such as retention time (RT) and collision cross section (CCS). This guide shows how to train a model for RT prediction and CCS prediction, and how to transfer these models to your own RT and CCS dataset.
 
-All models mentioned can be downloaded from `release v1.2.0 <https://github.com/JosieHong/3DMolMS/releases/tag/v1.2.0>`_.
+All models mentioned can be downloaded from `release v1.3.0 <https://github.com/JosieHong/3DMolMS/releases/tag/v1.3.0>`_.
 
 Setup
 -----
@@ -53,7 +53,7 @@ Learning from scratch:
    --test_data ./data/allccs_etkdgv3_test.pkl \
    --checkpoint_path ./check_point/molnet_ccs_etkdgv3.pt
 
-If you'd like to train this model from the pre-trained model on MS/MS prediction, please download the pre-trained model from `release v1.2.0 <https://github.com/JosieHong/3DMolMS/releases/tag/v1.2.0>`_.
+If you'd like to train this model from the pre-trained model on MS/MS prediction, please download the pre-trained model from `release v1.3.0 <https://github.com/JosieHong/3DMolMS/releases/tag/v1.3.0>`_.
 
 Learning from pretrained model:
 
