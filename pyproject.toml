@@ -46,6 +46,7 @@ dependencies = [
     "rdkit",
     "matplotlib",
     "pillow",
+    "platformdirs",
     "scikit-learn",
     "tqdm"
 ]

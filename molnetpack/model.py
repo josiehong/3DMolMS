@@ -4,42 +4,47 @@ import torch.nn.functional as F
 from decimal import *
 from typing import Tuple
 
-# from .molconv import MolConv, MolConv2
-from .molconv import MolConv3
+# encoder layers: MolConv2 (v2, E(3)-invariant, default); MolConv1 (v1, legacy absolute-Gram).
+# NB import MolConv1 explicitly for the v1 path — bare `MolConv` is aliased to MolConv2.
+from .molconv import MolConv1, MolConv2
 
 
 # ----------------------------------------
 # >>>           encoder part           <<<
 # ----------------------------------------
 class Encoder(nn.Module):
-    def __init__(self, in_dim, layers, emb_dim, point_num, k):
+    def __init__(self, in_dim, layers, emb_dim, point_num, k, chirality=False,
+                 encoder_version=2):
         super(Encoder, self).__init__()
         self.emb_dim = emb_dim
-        self.hidden_layers = nn.ModuleList(
-            [
-                MolConv3(
-                    in_dim=in_dim,
-                    out_dim=layers[0],
-                    point_num=point_num,
-                    k=k,
-                    remove_xyz=True,
-                )
-            ]
-        )
-        for i in range(1, len(layers)):
-            if i == 1:
+        self.encoder_version = int(encoder_version)
+        # chirality=True -> SE(3) (reflection-sensitive, chiral tasks); False -> E(3) (default).
+        # Only the first layer sees xyz, so it carries the flag.
+        if self.encoder_version == 1:
+            # Legacy v1 (MolConv1): absolute-position Gram, BatchNorm, not E(3).
+            self.hidden_layers = nn.ModuleList(
+                [MolConv1(in_dim=in_dim, out_dim=layers[0], k=k, remove_xyz=True)]
+            )
+            for i in range(1, len(layers)):
                 self.hidden_layers.append(
-                    MolConv3(
-                        in_dim=layers[i - 1],
-                        out_dim=layers[i],
+                    MolConv1(in_dim=layers[i - 1], out_dim=layers[i], k=k, remove_xyz=False)
+                )
+        else:
+            self.hidden_layers = nn.ModuleList(
+                [
+                    MolConv2(
+                        in_dim=in_dim,
+                        out_dim=layers[0],
                         point_num=point_num,
                         k=k,
-                        remove_xyz=False,
+                        remove_xyz=True,
+                        chirality=chirality,
                     )
-                )
-            else:
+                ]
+            )
+            for i in range(1, len(layers)):
                 self.hidden_layers.append(
-                    MolConv3(
+                    MolConv2(
                         in_dim=layers[i - 1],
                         out_dim=layers[i],
                         point_num=point_num,
@@ -55,18 +60,26 @@ class Encoder(nn.Module):
         )
 
     def forward(
-        self, x: torch.Tensor, idx_base: torch.Tensor, mask: torch.Tensor
+        self,
+        x: torch.Tensor,
+        idx_base: torch.Tensor,
+        mask: torch.Tensor,
+        return_per_atom: bool = False,
     ) -> torch.Tensor:
         xs = []
         for i, hidden_layer in enumerate(self.hidden_layers):
-            if i == 0:
-                tmp_x = hidden_layer(x, idx_base, mask)
+            inp = x if i == 0 else xs[-1]
+            if self.encoder_version == 1:
+                tmp_x = hidden_layer(inp, idx_base)          # v1 layers take no mask
             else:
-                tmp_x = hidden_layer(xs[-1], idx_base, mask)
+                tmp_x = hidden_layer(inp, idx_base, mask)
             xs.append(tmp_x)
 
         x = torch.cat(xs, dim=1)  # torch.Size([batch_size, emb_dim, point_num])
         x = self.conv(x)
+
+        # per-atom features before pooling: [batch_size, emb_dim, point_num]
+        per_atom = x
 
         # Apply the mask: Set padding points to a very low value for max pooling and zero for average pooling
         mask_expanded = mask.unsqueeze(1).expand_as(
@@ -89,8 +102,10 @@ class Encoder(nn.Module):
         )  # Avoid division by zero
         avg_pooled = x_masked_avg.sum(dim=2) / valid_counts  # [batch_size, emb_dim]
 
-        x = max_pooled + avg_pooled
-        return x
+        pooled = max_pooled + avg_pooled
+        if return_per_atom:
+            return per_atom, pooled  # [B, emb_dim, N], [B, emb_dim]
+        return pooled
 
 
 # ----------------------------------------
@@ -176,6 +191,8 @@ class MolNet_MS(nn.Module):
             emb_dim=int(config["emb_dim"]),
             point_num=int(config["max_atom_num"]),
             k=int(config["k"]),
+            chirality=bool(config.get("chirality", False)),
+            encoder_version=int(config.get("encoder_version", 2)),
         )
         self.decoder = MSDecoder(
             in_dim=int(config["emb_dim"] + config["add_num"]),
@@ -195,7 +212,7 @@ class MolNet_MS(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                m.weight.data.normal_(mean=0.0, std=1.0)
+                nn.init.xavier_uniform_(m.weight)
                 if m.bias is not None:
                     m.bias.data.zero_()
 
@@ -250,6 +267,8 @@ class MolNet_Oth(nn.Module):
             emb_dim=int(config["emb_dim"]),
             point_num=int(config["max_atom_num"]),
             k=int(config["k"]),
+            chirality=bool(config.get("chirality", False)),
+            encoder_version=int(config.get("encoder_version", 2)),
         )
         self.decoder = MSDecoder(
             in_dim=int(config["emb_dim"] + config["add_num"]),
@@ -268,7 +287,7 @@ class MolNet_Oth(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                m.weight.data.normal_(mean=0.0, std=1.0)
+                nn.init.xavier_uniform_(m.weight)
                 if m.bias is not None:
                     m.bias.data.zero_()
 
@@ -357,3 +376,91 @@ class MolNet_Oth(nn.Module):
             if self.scaler is not None:
                 return self.unscale(x)
             return x  # unscaled output
+
+
+# -------------------------------------------------------------------------
+# >>>                        SSL Pretraining                            <<<
+# Masked distance reconstruction on 3D molecular conformers:
+#   Randomly mask mask_ratio of atoms (zero all 21 dims including xyz).
+#   For each (masked, unmasked) atom pair, predict the Euclidean distance
+#   from per-atom encoder features.  The encoder must infer the masked
+#   atom's 3D location from its chemical context.
+#   Valid because MolConv2 is E(3)-invariant and distances are too.
+# -------------------------------------------------------------------------
+class MolNet_SSL(nn.Module):
+    """Encoder + distance head for masked distance reconstruction pretraining.
+
+    SSL task — Masked distance reconstruction:
+        Atoms are masked by zeroing all 21 input dims (including xyz).
+        The model predicts Euclidean distances between (masked, unmasked)
+        atom pairs from per-atom encoder features.
+        Loss: MSELoss on raw distances (Å).
+    """
+
+    def __init__(self, config: dict) -> None:
+        super(MolNet_SSL, self).__init__()
+        emb_dim = int(config["emb_dim"])
+
+        self.encoder = Encoder(
+            in_dim=int(config["in_dim"]),
+            layers=config["encode_layers"],
+            emb_dim=emb_dim,
+            point_num=int(config["max_atom_num"]),
+            k=int(config["k"]),
+            chirality=bool(config.get("chirality", False)),
+            encoder_version=int(config.get("encoder_version", 2)),
+        )
+        self.distance_head = nn.Sequential(
+            nn.Linear(emb_dim * 2, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1),
+        )
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv1d):
+                nn.init.kaiming_normal_(
+                    m.weight, a=0.2, mode="fan_in", nonlinearity="leaky_relu"
+                )
+            elif isinstance(m, (nn.BatchNorm1d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    m.bias.data.zero_()
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        mask: torch.Tensor,
+        pair_indices: torch.Tensor,
+        idx_base: torch.Tensor = None,
+    ) -> torch.Tensor:
+        """
+        Args:
+            x:            [B, 21, N]  – mol features (masked atoms zeroed).
+            mask:         [B, N]      – True for valid atoms.
+            pair_indices: [B, P, 2]   – (masked_i, unmasked_j) atom index pairs.
+            idx_base:     [B, 1, 1]   – kNN offset; computed internally if None.
+        Returns:
+            dist_pred:    [B, P]      – predicted distances (Å).
+        """
+        if idx_base is None:
+            batch_size, _, num_points = x.size()
+            idx_base = (
+                torch.arange(0, batch_size, device=x.device, dtype=torch.long)
+                .view(-1, 1, 1)
+                * num_points
+            )
+
+        per_atom, _ = self.encoder(x, idx_base, mask, return_per_atom=True)
+        per_atom_t  = per_atom.permute(0, 2, 1)  # [B, N, emb_dim]
+
+        arange = torch.arange(per_atom_t.size(0), device=per_atom_t.device).unsqueeze(1)
+        pi = per_atom_t[arange, pair_indices[:, :, 0]]  # [B, P, emb_dim]
+        pj = per_atom_t[arange, pair_indices[:, :, 1]]  # [B, P, emb_dim]
+        dist_pred = self.distance_head(
+            torch.cat([pi, pj], dim=-1)
+        ).squeeze(-1)                                    # [B, P]
+
+        return dist_pred

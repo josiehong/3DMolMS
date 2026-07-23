@@ -4,6 +4,8 @@ import requests
 import zipfile
 from pathlib import Path
 
+import platformdirs
+
 import numpy as np
 import pandas as pd
 import yaml
@@ -19,7 +21,7 @@ except ImportError:
     raise
 
 from rdkit import Chem, RDLogger
-from rdkit.Chem import AllChem, Descriptors, Draw
+from rdkit.Chem import Descriptors, Draw
 from PIL import Image
 from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
@@ -106,6 +108,14 @@ class MolNet:
         self.ccs_res_df           = None
         self.rt_res_df            = None
 
+        # Tracks which MS/MS weights are currently loaded so pred_msms can
+        # reload when the instrument or custom checkpoint changes.
+        self._loaded_msms_instrument = None
+        self._loaded_msms_ckpt       = None
+
+        # DataLoader batch size (set by load_data / load_dataframe).
+        self.batch_size   = 1
+
         self._init_random_seed(seed)
 
     # ------------------------------------------------------------------
@@ -143,9 +153,15 @@ class MolNet:
                 k: v for k, v in ckpt["model_state_dict"].items()
                 if not k.startswith("decoder")
             }
-            for v in encoder_dict.values():
-                v.requires_grad = False
             model.load_state_dict(encoder_dict, strict=False)
+            # Freeze the encoder parameters in the model (not the checkpoint tensors),
+            # unless MOLNET_NO_FREEZE=1 is set (unfrozen full fine-tune).
+            if os.environ.get("MOLNET_NO_FREEZE") == "1":
+                print("MOLNET_NO_FREEZE=1: encoder loaded from transfer source but NOT frozen (full fine-tune)")
+            else:
+                for name, param in model.named_parameters():
+                    if not name.startswith("decoder"):
+                        param.requires_grad = False
             return None
         else:
             model.load_state_dict(ckpt["model_state_dict"])
@@ -158,6 +174,21 @@ class MolNet:
     # ------------------------------------------------------------------
     # Checkpoint download (used by pred_* methods)
     # ------------------------------------------------------------------
+
+    def _checkpoint_dir(self):
+        """Directory where downloaded checkpoints are cached.
+
+        Resolution order:
+          1. ``$MOLNETPACK_HOME`` — explicit override (e.g. a shared cache on a server).
+          2. A per-user cache directory following OS conventions
+             (``~/.cache/molnetpack`` on Linux, ``~/Library/Caches/molnetpack``
+             on macOS, ``%LOCALAPPDATA%\\molnetpack\\Cache`` on Windows).
+
+        Checkpoints are deliberately kept out of the installed package
+        directory, which may be read-only and is wiped on upgrade/reinstall.
+        """
+        override = os.environ.get("MOLNETPACK_HOME")
+        return Path(override) if override else Path(platformdirs.user_cache_dir("molnetpack"))
 
     def _get_checkpoint_path(self, task_name, instrument=None):
         task_map = {
@@ -174,7 +205,19 @@ class MolNet:
                 else self.msms_config["test"]["local_path_orbitrap"]
             ),
         }
-        return str(self.current_path / task_map[task_name])
+        rel = task_map[task_name]
+
+        # An explicit $MOLNETPACK_HOME is authoritative — do not fall back to a
+        # possibly-stale in-package checkpoint.
+        if not os.environ.get("MOLNETPACK_HOME"):
+            # Default (no override): reuse a checkpoint already present in the
+            # legacy in-package location (editable/dev checkouts) to avoid a
+            # multi-GB re-download; otherwise use the per-user cache directory.
+            legacy_path = self.current_path / rel
+            if legacy_path.exists():
+                return str(legacy_path)
+
+        return str(self._checkpoint_dir() / os.path.basename(rel))
 
     def _ensure_checkpoint(self, checkpoint_path, task_name, instrument=None):
         if os.path.exists(checkpoint_path):
@@ -192,29 +235,42 @@ class MolNet:
             url = self.msms_config["test"]["github_release_url_orbitrap"]
 
         print(f"Downloading checkpoint from {url}")
-        response = requests.get(url)
-        with open(zip_path, "wb") as f:
-            f.write(response.content)
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(os.path.dirname(checkpoint_path))
+        try:
+            with requests.get(url, stream=True, timeout=60) as response:
+                response.raise_for_status()
+                with open(zip_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=1 << 20):
+                        f.write(chunk)
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                zf.extractall(os.path.dirname(checkpoint_path))
+            os.remove(zip_path)  # don't keep the archive around in the cache
+        except (requests.RequestException, zipfile.BadZipFile) as e:
+            # Remove partial/corrupt downloads so the next attempt starts clean.
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            raise RuntimeError(
+                f"Failed to download or extract checkpoint from {url}: {e}"
+            ) from e
 
     def load_checkpoint(self, task_name, path_to_checkpoint=None, instrument=None):
         checkpoint_path = path_to_checkpoint or self._get_checkpoint_path(task_name, instrument)
         self._ensure_checkpoint(checkpoint_path, task_name, instrument)
         model = getattr(self, self._task_model_attr(task_name) if task_name != "save_feat" else "encoder")
         model.load_state_dict(
-            torch.load(checkpoint_path, map_location=self.device, weights_only=True)["model_state_dict"]
+            torch.load(checkpoint_path, map_location=self.device, weights_only=False)["model_state_dict"]
         )
 
     # ------------------------------------------------------------------
     # Data loading
     # ------------------------------------------------------------------
 
-    def load_data(self, path_to_test_data):
+    def load_data(self, path_to_test_data, batch_size=1):
         """Load input molecules from a CSV, MGF, or PKL file.
 
         :param path_to_test_data: Path to the input file. Supported formats: ``csv``, ``mgf``, ``pkl``.
         :type path_to_test_data: str
+        :param batch_size: DataLoader batch size for inference (default ``1``).
+        :type batch_size: int
         """
         loaders = {
             "csv": lambda p: csv2pkl_wfilter(p, self.data_config["encoding"]),
@@ -232,8 +288,52 @@ class MolNet:
         if ext not in loaders:
             raise ValueError(f"Unsupported format: .{ext}")
 
-        self.pkl_dict = loaders[ext](path_to_test_data)
-        print(f"\nLoaded {len(self.pkl_dict)} records from {path_to_test_data}")
+        pkl_dict = loaders[ext](path_to_test_data)
+        self._set_data(pkl_dict, batch_size, source=path_to_test_data)
+
+    def load_dataframe(self, df, batch_size=1):
+        """Load input molecules directly from a pandas DataFrame (no temp file).
+
+        :param df: DataFrame with columns ``ID``, ``SMILES``, ``Precursor_Type``,
+            ``Collision_Energy`` (same schema as the CSV input).
+        :type df: pandas.DataFrame
+        :param batch_size: DataLoader batch size for inference (default ``1``).
+        :type batch_size: int
+        """
+        pkl_dict = csv2pkl_wfilter(df, self.data_config["encoding"])
+        self._set_data(pkl_dict, batch_size, source="<DataFrame>")
+
+    def load_smiles(self, smiles, precursor_type="[M+H]+", collision_energy="20 V",
+                    ids=None, batch_size=1):
+        """Load one or more molecules from SMILES strings.
+
+        :param smiles: A single SMILES string or a list of SMILES strings.
+        :param precursor_type: Adduct type (str) or per-molecule list.
+        :param collision_energy: Collision energy (e.g. ``"20 V"``) or per-molecule list.
+        :param ids: Optional list of IDs; defaults to ``mol_0``, ``mol_1`` ...
+        :param batch_size: DataLoader batch size for inference (default ``1``).
+        """
+        if isinstance(smiles, str):
+            smiles = [smiles]
+        n = len(smiles)
+
+        def _broadcast(v):
+            return v if isinstance(v, (list, tuple)) else [v] * n
+
+        df = pd.DataFrame({
+            "ID":               ids or [f"mol_{i}" for i in range(n)],
+            "SMILES":           smiles,
+            "Precursor_Type":   _broadcast(precursor_type),
+            "Collision_Energy": _broadcast(collision_energy),
+        })
+        self.load_dataframe(df, batch_size=batch_size)
+
+    def _set_data(self, pkl_dict, batch_size, source):
+        self.pkl_dict = pkl_dict
+        self.batch_size = batch_size
+        print(f"\nLoaded {len(self.pkl_dict)} records from {source}")
+        # The shared loader stays at batch_size=1 so pred_ccs / pred_rt (which
+        # require it) are unaffected; pred_msms builds its own batched loader.
         self.valid_loader = DataLoader(
             Mol_Dataset(self.pkl_dict),
             batch_size=1, shuffle=False, num_workers=0, drop_last=False,
@@ -278,13 +378,28 @@ class MolNet:
         """
         assert instrument in ("qtof", "orbitrap"), 'instrument must be "qtof" or "orbitrap"'
 
-        if self.msms_model is None:
-            self.msms_model = MolNet_MS(self.msms_config["model"]).to(self.device)
+        # (Re)load weights when the model is uninitialized, or when the
+        # instrument / custom checkpoint differs from what is currently loaded.
+        # Without this, the cached model silently keeps stale weights after an
+        # instrument switch within the same MolNet instance.
+        if (self.msms_model is None
+                or self._loaded_msms_instrument != instrument
+                or self._loaded_msms_ckpt != path_to_checkpoint):
+            if self.msms_model is None:
+                self.msms_model = MolNet_MS(self.msms_config["model"]).to(self.device)
             self.load_checkpoint("msms", path_to_checkpoint, instrument)
+            self._loaded_msms_instrument = instrument
+            self._loaded_msms_ckpt       = path_to_checkpoint
 
+        loader = self.valid_loader
+        if self.batch_size > 1:
+            loader = DataLoader(
+                Mol_Dataset(self.pkl_dict),
+                batch_size=self.batch_size, shuffle=False, num_workers=0, drop_last=False,
+            )
         id_list, pred_tensor = pred_step(
-            self.msms_model, self.device, self.valid_loader,
-            batch_size=1, num_points=self.msms_config["model"]["max_atom_num"],
+            self.msms_model, self.device, loader,
+            batch_size=self.batch_size, num_points=self.msms_config["model"]["max_atom_num"],
         )
         pred_dicts = [
             ms_vec2dict(spec, float(self.msms_config["model"]["resolution"]))
@@ -488,7 +603,10 @@ class MolNet:
                 print("Early stop!")
                 break
 
-        # Store the trained model so pred_* methods can use it immediately
+        # Reload best checkpoint weights before storing so pred_* methods use the
+        # best-validation model, not the final (possibly worse) last-epoch model.
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            self._load_weights(model, checkpoint_path)
         setattr(self, self._task_model_attr(task), model)
         print(f"\nTraining complete. Best {label}: {best_metric:.4f}")
         return best_metric
@@ -526,7 +644,11 @@ class MolNet:
             binned = bin_spectrum(pred["m/z array"], pred["intensity array"])
             if binned is None or len(gt_vec) != len(binned):
                 continue
-            sim = cosine_similarity(gt_vec, binned)
+            # gt_vec is sqrt-normalised (stored by generate_ms); binned is
+            # intensity-space (pred_step squares model output).  Square gt_vec
+            # so both vectors are in intensity space, consistent with the
+            # cosine(pred², y²) metric used during training.
+            sim = cosine_similarity(np.array(gt_vec) ** 2, binned)
             if sim is None:
                 continue
             rows.append({
@@ -662,7 +784,7 @@ class MolNet:
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True,
                                   num_workers=num_workers, drop_last=True)
         valid_loader = DataLoader(valid_set, batch_size=batch_size, shuffle=False,
-                                  num_workers=num_workers, drop_last=True)
+                                  num_workers=num_workers, drop_last=False)
         return train_loader, valid_loader
 
 
@@ -692,20 +814,21 @@ def plot_msms(msms_res_df, dir_to_img):
         plt.xlabel("M/Z")
         plt.ylabel("Relative intensity")
 
+        # 2-D depiction; RDKit computes 2-D coordinates automatically, so there
+        # is no need to embed/optimize a 3-D conformer just to draw it.
         mol = Chem.MolFromSmiles(row["SMILES"])
-        mol = Chem.AddHs(mol)
-        AllChem.EmbedMolecule(mol)
-        AllChem.MMFFOptimizeMolecule(mol, maxIters=200)
-        mol_img = Draw.MolToImage(mol, size=(800, 800))
-        alpha   = Image.fromarray(255 - np.array(mol_img.convert("L")))
-        mol_img.putalpha(alpha)
-        imagebox = OffsetImage(mol_img, zoom=72.0 / img_dpi)
-        ax.add_artist(AnnotationBbox(
-            imagebox, (np.max(mz_values) * 0.28, y_max * 0.64),
-            frameon=False, xycoords="data",
-        ))
+        if mol is not None:
+            mol_img = Draw.MolToImage(mol, size=(800, 800))
+            alpha   = Image.fromarray(255 - np.array(mol_img.convert("L")))
+            mol_img.putalpha(alpha)
+            imagebox = OffsetImage(mol_img, zoom=72.0 / img_dpi)
+            ax.add_artist(AnnotationBbox(
+                imagebox, (np.max(mz_values) * 0.28, y_max * 0.64),
+                frameon=False, xycoords="data",
+            ))
 
-        plt.savefig(os.path.join(dir_to_img, row["ID"]), dpi=img_dpi, bbox_inches="tight")
+        out_path = os.path.join(dir_to_img, f"{row['ID']}.png")
+        plt.savefig(out_path, dpi=img_dpi, bbox_inches="tight")
         plt.close()
 
     print(f"\nSaved plots to {dir_to_img}")
