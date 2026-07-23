@@ -7,13 +7,14 @@ correct encoder must be **permutation-invariant** (atom ordering is arbitrary)
 and invariant to **rigid motions** of the conformer (its absolute pose in space
 carries no chemistry).
 
-There are two versions in the codebase: **v1** (`MolConv`, legacy) and **v2**
+There are two versions in the codebase: **v1** (`MolConv1`, legacy) and **v2**
 (`MolConv2`, current/default). Select with `encoder_version: 1|2` in the model
-config.
+config. The bare name **`MolConv`** is a soft link to `MolConv2`, so existing
+code that imports `MolConv` transparently gets the current default (v2).
 
 ## Summary
 
-| | **v1** (`MolConv`) | **v2** (`MolConv2`) |
+| | **v1** (`MolConv1`) | **v2** (`MolConv2`) |
 |---|---|---|
 | First-layer Gram matrix | absolute `⟨xⱼ, xₗ⟩`, **uncentered** | relative `⟨xⱼ−xᵢ, xₗ−xᵢ⟩` on the **centered** frame |
 | Padding atoms in kNN | included (sit at the origin) | **masked out** of real atoms' neighborhoods |
@@ -33,7 +34,7 @@ config.
 The invariance rows are measured, not claimed — see [Invariance
 verification](#invariance-verification).
 
-## v1 — `MolConv` (legacy)
+## v1 — `MolConv1` (legacy)
 
 The first layer builds its Gram matrix from **absolute atom positions**
 `⟨xⱼ, xₗ⟩` (via `graph_feat @ graph_featᵀ`) using the raw, uncentered
@@ -138,7 +139,7 @@ pytest tests/test_encoder_invariance.py tests/test_se3_invariance.py -q
 
 ```yaml
 model:
-  encoder_version: 2   # 1 = MolConv (legacy O(3)); 2 = MolConv2 (E(3), default)
+  encoder_version: 2   # 1 = MolConv1 (legacy O(3)); 2 = MolConv2 (E(3), default; also aliased as MolConv)
   chirality: false     # true -> SE(3), reflection-sensitive (chiral tasks, e.g. 3DMolCSP)
 ```
 

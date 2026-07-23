@@ -226,13 +226,22 @@ class MolNet:
         zip_path = checkpoint_path + ".zip"
 
         if task_name == "ccs":
-            url = self.ccs_config["test"]["github_release_url"]
+            url = self.ccs_config["test"].get("github_release_url")
         elif task_name == "rt":
-            url = self.rt_config["test"]["github_release_url"]
+            url = self.rt_config["test"].get("github_release_url")
         elif instrument == "qtof":
-            url = self.msms_config["test"]["github_release_url_qtof"]
+            url = self.msms_config["test"].get("github_release_url_qtof")
         else:
-            url = self.msms_config["test"]["github_release_url_orbitrap"]
+            url = self.msms_config["test"].get("github_release_url_orbitrap")
+
+        # Some configs (e.g. the non-default training configs) intentionally ship
+        # without a download URL; in that case the checkpoint must be provided locally.
+        if not url:
+            raise RuntimeError(
+                f"No download URL is configured for task '{task_name}'. "
+                f"Place the checkpoint at '{checkpoint_path}' manually, or pass "
+                f"path_to_checkpoint=... ."
+            )
 
         print(f"Downloading checkpoint from {url}")
         try:

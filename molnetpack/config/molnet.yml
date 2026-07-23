@@ -22,5 +22,5 @@ train:
 test: 
   local_path_qtof: './check_point/molnet_qtof_etkdgv3.pt'
   local_path_orbitrap: './check_point/molnet_orbitrap_etkdgv3.pt'
-  github_release_url_qtof: 'https://github.com/JosieHong/3DMolMS/releases/download/v1.2.0/molnet_qtof_etkdgv3.zip'
-  github_release_url_orbitrap: 'https://github.com/JosieHong/3DMolMS/releases/download/v1.2.0/molnet_orbitrap_etkdgv3.zip'
+  github_release_url_qtof: 'https://github.com/JosieHong/3DMolMS/releases/download/v1.3.0/molnet_qtof_etkdgv3.zip'
+  github_release_url_orbitrap: 'https://github.com/JosieHong/3DMolMS/releases/download/v1.3.0/molnet_orbitrap_etkdgv3.zip'
