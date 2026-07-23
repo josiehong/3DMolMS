@@ -14,7 +14,7 @@ authors = [
     { name="Haixu Tang" }
 ]
 maintainers = [
-    { name="Yuhui Hong", email="yuhhong@uw.edu" },
+    { name="Yuhui Hong", email="yuhhong@iu.edu" },
 ]
 description = "3DMolMS: prediction of tandem mass spectra from 3D molecular conformations"
 readme = "PyPI_README.md"
@@ -45,7 +45,11 @@ dependencies = [
     "PyYAML",
     "rdkit", 
     "matplotlib",
-    "pillow"
+    "pillow",
+    "platformdirs",
+    "requests",
+    "scikit-learn",
+    "tqdm"
 ]
 
 [project.urls]

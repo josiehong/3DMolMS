@@ -8,9 +8,9 @@
 
 ## Latest release
 
-3DMolMS v1.2.2 is now available on PyPI!
+3DMolMS v1.3.0 is now available on PyPI!
 
-This release adds `train()` and `evaluate()` methods directly to `MolNet`, making it possible to train and evaluate models entirely from Python without CLI scripts. The source code has also been reorganized for clarity. Pretrained checkpoints from v1.2.0 remain fully compatible.
+This release makes the 3D molecular encoder correctly **E(3)-invariant** (to rotation, reflection, and translation) — the previous encoder's output depended on a molecule's absolute position in space. All checkpoints (MS/MS for QTOF and Orbitrap, RT, and CCS) have been retrained with the corrected encoder. This release also adds batched MS/MS inference, in-memory input, per-user checkpoint caching, and optional self-supervised pretraining.
 
 The changes log can be found at [./CHANGE_LOG.md](./CHANGE_LOG.md). 
 
@@ -38,7 +38,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 molnet_engine = MolNet(device, seed=42)
 
 # Supports CSV, MGF, and PKL input
-molnet_engine.load_data("./examples/demo_input.csv")
+molnet_engine.load_data("./examples/input_msms.csv")
 
 # Predict and save to MGF (checkpoints are downloaded automatically)
 pred_df = molnet_engine.pred_msms(
@@ -50,7 +50,7 @@ pred_df = molnet_engine.pred_msms(
 **Predict retention time (RT) and CCS:**
 
 ```python
-molnet_engine.load_data("./examples/demo_input.csv")
+molnet_engine.load_data("./examples/input_ccs.csv")
 rt_df  = molnet_engine.pred_rt(path_to_results="./output_rt.csv")
 ccs_df = molnet_engine.pred_ccs(path_to_results="./output_ccs.csv")
 ```
