@@ -17,7 +17,7 @@ maintainers = [
     { name="Yuhui Hong", email="yuhhong@iu.edu" },
 ]
 description = "3DMolMS: prediction of tandem mass spectra from 3D molecular conformations"
-readme = "PyPI_README.md"
+readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.8"
 classifiers = [
