@@ -112,8 +112,10 @@ def mgf2pkl(spectra, encoder):
 def csv2pkl_wfilter(csv_path, encoder):
     """
     This function is only used in prediction, so by default, the spectra are not contained.
+
+    ``csv_path`` may be a path to a CSV file or an already-loaded pandas DataFrame.
     """
-    df = pd.read_csv(csv_path)
+    df = csv_path if isinstance(csv_path, pd.DataFrame) else pd.read_csv(csv_path)
     data = []
     for idx, row in df.iterrows():
         # mol array

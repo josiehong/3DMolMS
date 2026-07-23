@@ -21,7 +21,7 @@ PyTorch must be installed separately. Check the `official PyTorch website <https
 Using ``molnetpack`` for MS/MS prediction
 -----------------------------------------
 
-The sample input files, a CSV and an MGF, are located at ``./examples/demo_input.csv`` and ``./examples/demo_input.mgf``, respectively. It's important to note that during the data loading phase, any input formats that are not supported will be automatically excluded. Below is a table outlining the types of input data that are supported:
+The sample input files, a CSV and an MGF, are located at ``./examples/input_msms.csv`` and ``./examples/input_msms.mgf``, respectively. It's important to note that during the data loading phase, any input formats that are not supported will be automatically excluded. Below is a table outlining the types of input data that are supported:
 
 .. list-table::
    :header-rows: 1

@@ -1,0 +1,24 @@
+# Self-supervised 3D pretraining (masked distance reconstruction) of the
+# 3DMolMS encoder. Used by scripts/pretrain_ssl.py; the resulting checkpoint
+# can be transferred into an MS/MS, RT, or CCS model via
+#   MolNet(...).train(..., resume_path=<ckpt>, transfer=True)
+model:
+  in_dim: 21
+  add_num: 0
+  max_atom_num: 300
+  emb_dim: 2048
+  k: 5
+  dropout: 0.2
+  encode_layers: [64, 64, 128, 256, 512, 1024]
+  encoder_version: 2      # 2 = MolConv2 (E(3), default); 1 = MolConv1 (legacy)
+  chirality: false        # true -> SE(3) (chiral tasks); keep false for the achiral encoder
+
+train:
+  epochs: 100
+  batch_size: 256
+  num_workers: 4
+  lr: 0.001
+  weight_decay: 0.01
+  early_stop_patience: 15
+  mask_ratio: 0.15        # fraction of atoms masked per molecule
+  num_pairs: 128          # (masked, unmasked) atom pairs sampled per molecule

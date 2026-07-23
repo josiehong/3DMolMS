@@ -77,11 +77,11 @@ Predict the MS/MS spectra using the following command:
 .. code-block:: bash
 
   python scripts/predict.py --task msms \
-  --test_data ./examples/demo_input.csv \
+  --test_data ./examples/input_msms.csv \
   --model_config_path ./molnetpack/config/molnet.yml \
   --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
   --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
-  --result_path ./examples/demo_output.mgf
+  --result_path ./examples/output_msms.mgf
 
 Arguments
 ~~~~~~~~~

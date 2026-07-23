@@ -2,8 +2,7 @@ model:
   in_dim: 21
   add_num: 0
   max_atom_num: 300
-  batch_size: 64
-  emb_dim: 2048 
+  emb_dim: 2048
   k: 5
   dropout: 0.2
   encode_layers: [64, 64, 128, 256, 512, 1024]
@@ -14,7 +13,9 @@ train:
   batch_size: 64
   num_workers: 0
   lr: 0.001
+  weight_decay: 0.01
+  augmentation: false
+  early_stop_patience: 60
 
 test:
   local_path: './check_point/molnet_rt_etkdgv3.pt'
-  github_release_url: 'https://github.com/JosieHong/3DMolMS/releases/download/v1.2.0/molnet_rt_etkdgv3.zip'

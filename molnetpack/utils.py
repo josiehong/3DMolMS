@@ -26,7 +26,6 @@ def make_idx_base(batch_size, num_points, device):
 # ---------------------------------------------------------------------------
 
 def pred_step(model, device, loader, batch_size, num_points):
-    assert batch_size == 1, "batch_size should be 1 for prediction"
     model.eval()
     id_list, pred_list = [], []
 
@@ -36,11 +35,14 @@ def pred_step(model, device, loader, batch_size, num_points):
             x    = x.to(device=device, dtype=torch.float).permute(0, 2, 1)
             mask = mask.to(device=device)
             env  = env.to(device=device, dtype=torch.float)
-            idx_base = make_idx_base(batch_size, num_points, device)
+            idx_base = make_idx_base(x.size(0), num_points, device)
 
             with torch.no_grad():
                 pred = model(x, mask, env, idx_base)
-                pred = pred / torch.max(pred)
+                # Normalize each spectrum by its own max so batched inference
+                # (batch_size > 1) matches single-molecule results. The previous
+                # global torch.max(pred) forced batch_size == 1.
+                pred = pred / pred.amax(dim=1, keepdim=True).clamp(min=1e-12)
 
             pred = torch.pow(pred, 2)
             pred = pred.detach().cpu().apply_(lambda v: v if v > 0.01 else 0)
@@ -64,7 +66,7 @@ def eval_step_oth(model, device, loader, batch_size, num_points):
             mask = mask.to(device=device)
             env  = env.to(device=device, dtype=torch.float)
             env  = env[:, 1:]  # remove collision energy
-            idx_base = make_idx_base(batch_size, num_points, device)
+            idx_base = make_idx_base(x.size(0), num_points, device)
 
             with torch.no_grad():
                 pred = model(x, mask, env, idx_base)
@@ -86,7 +88,7 @@ def pred_feat(model, device, loader, batch_size, num_points):
             ids, x, mask, _ = batch
             x    = x.to(device=device, dtype=torch.float).permute(0, 2, 1)
             mask = mask.to(device=device)
-            idx_base = make_idx_base(batch_size, num_points, device)
+            idx_base = make_idx_base(x.size(0), num_points, device)
 
             with torch.no_grad():
                 pred = model(x, mask, idx_base)
@@ -125,7 +127,7 @@ def train_step(model, device, loader, optimizer, batch_size, num_points, task):
     with tqdm(total=len(loader), desc="Train") as bar:
         for step, batch in enumerate(loader):
             x, mask, y, env = _unpack_train_batch(batch, has_env, device)
-            idx_base = make_idx_base(batch_size, num_points, device)
+            idx_base = make_idx_base(x.size(0), num_points, device)
 
             optimizer.zero_grad()
             pred = model(x, mask, env, idx_base)
@@ -135,8 +137,11 @@ def train_step(model, device, loader, optimizer, batch_size, num_points, task):
                 loss.backward()
                 optimizer.step()
                 with torch.no_grad():
+                    pred_max = pred.max(dim=1, keepdim=True).values.clamp(min=1e-8)
+                    pred_m = pred / pred_max
+                    pred_m = pred_m.cpu().apply_(lambda v: v if v > 0.01 else 0).to(device)
                     metric_sum += F.cosine_similarity(
-                        torch.pow(pred, 2), torch.pow(y, 2), dim=1
+                        torch.pow(pred_m, 2), torch.pow(y, 2), dim=1
                     ).mean().item()
             else:
                 y_scaled = model.scale(y) if model.scaler is not None else y
@@ -162,13 +167,14 @@ def eval_step(model, device, loader, batch_size, num_points, task):
     with tqdm(total=len(loader), desc="Eval") as bar:
         for step, batch in enumerate(loader):
             x, mask, y, env = _unpack_train_batch(batch, has_env, device)
-            idx_base = make_idx_base(batch_size, num_points, device)
+            idx_base = make_idx_base(x.size(0), num_points, device)
 
             with torch.no_grad():
                 pred = model(x, mask, env, idx_base)
 
                 if task == "msms":
-                    pred = pred / torch.max(pred)
+                    pred_max = pred.max(dim=1, keepdim=True).values.clamp(min=1e-8)
+                    pred = pred / pred_max
                     pred = pred.cpu().apply_(lambda v: v if v > 0.01 else 0).to(device)
                     metric_sum += F.cosine_similarity(
                         torch.pow(pred, 2), torch.pow(y, 2), dim=1
@@ -214,3 +220,88 @@ def cosine_similarity(vec1, vec2):
     a, b  = np.array(vec1), np.array(vec2)
     denom = np.linalg.norm(a) * np.linalg.norm(b)
     return float(np.dot(a, b) / denom) if denom > 0 else None
+
+
+# ---------------------------------------------------------------------------
+# SSL pretraining steps  (used by scripts/pretrain_ssl.py)
+# ---------------------------------------------------------------------------
+
+def pretrain_ssl_step(model, device, loader, optimizer, batch_size, num_points):
+    """One masked distance reconstruction pretraining epoch.
+
+    Returns:
+        (avg_mse_loss, mae_angstrom)
+    """
+    model.train()
+    mse_loss_fn = nn.MSELoss(reduction="sum")
+
+    loss_sum = mae_sum = total_pairs = 0
+
+    with tqdm(total=len(loader), desc="Pretrain SSL") as bar:
+        for batch in loader:
+            _, mol_masked, mask, pair_indices, distances = batch
+            mol_masked   = mol_masked.to(device=device, dtype=torch.float).permute(0, 2, 1)
+            mask         = mask.to(device=device)
+            pair_indices = pair_indices.to(device=device, dtype=torch.long)
+            distances    = distances.to(device=device, dtype=torch.float)
+
+            optimizer.zero_grad()
+            dist_pred = model(mol_masked, mask, pair_indices)
+
+            n    = distances.numel()
+            loss = mse_loss_fn(dist_pred.reshape(-1), distances.reshape(-1)) / max(n, 1)
+            loss.backward()
+            optimizer.step()
+
+            loss_sum    += loss.item() * n
+            mae_sum     += torch.abs(dist_pred.reshape(-1) - distances.reshape(-1)).sum().item()
+            total_pairs += n
+
+            bar.set_postfix(
+                lr=f"{get_lr(optimizer):.2e}",
+                mse=f"{loss.item():.3f}",
+            )
+            bar.update(1)
+
+    avg_loss = loss_sum    / max(total_pairs, 1)
+    mae      = mae_sum     / max(total_pairs, 1)
+    return avg_loss, mae
+
+
+def eval_ssl_step(model, device, loader, batch_size, num_points):
+    """One masked distance reconstruction validation epoch.
+
+    Returns:
+        (avg_mse_loss, mae_angstrom)
+    """
+    model.eval()
+    mse_loss_fn = nn.MSELoss(reduction="sum")
+
+    loss_sum = mae_sum = total_pairs = 0
+    ran = False
+
+    with tqdm(total=len(loader), desc="Eval SSL") as bar:
+        for batch in loader:
+            ran = True
+            _, mol_masked, mask, pair_indices, distances = batch
+            mol_masked   = mol_masked.to(device=device, dtype=torch.float).permute(0, 2, 1)
+            mask         = mask.to(device=device)
+            pair_indices = pair_indices.to(device=device, dtype=torch.long)
+            distances    = distances.to(device=device, dtype=torch.float)
+
+            with torch.no_grad():
+                dist_pred = model(mol_masked, mask, pair_indices)
+                n = distances.numel()
+                loss_sum    += mse_loss_fn(dist_pred.reshape(-1), distances.reshape(-1)).item()
+                mae_sum     += torch.abs(dist_pred.reshape(-1) - distances.reshape(-1)).sum().item()
+                total_pairs += n
+
+            bar.update(1)
+
+    if not ran:
+        print("Warning: validation loader is empty — skipping validation metrics.")
+        return float("inf"), float("inf")
+
+    avg_loss = loss_sum / max(total_pairs, 1)
+    mae      = mae_sum  / max(total_pairs, 1)
+    return avg_loss, mae

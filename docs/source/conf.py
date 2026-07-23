@@ -4,7 +4,7 @@
 project = "3DMolMS"
 copyright = "2023, Yuhui Hong"
 author = "Yuhui Hong"
-version = "v1.2.0"
+version = "v1.3.0"
 
 # -- General configuration
 extensions = [

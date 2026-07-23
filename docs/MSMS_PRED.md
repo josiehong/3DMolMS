@@ -11,7 +11,7 @@ pip install .
 
 Step 1: Prepare the test set. The following formats are supported: csv, mgf, or [customed pkl](molnetpack/data_utils/all2pkl.py). 
 
-Here is an input example from MoNA of csv format (see the whole file at `./examples/demo_input.csv`): 
+Here is an input example from MoNA of csv format (see the whole file at `./examples/input_msms.csv`): 
 
 ```
 ID,SMILES,Precursor_Type,Collision_Energy
@@ -20,7 +20,7 @@ demo_1,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,[M+H]+,20 V
 demo_2,C/C(=C\CNc1nc[nH]c2ncnc1-2)CO,[M+H]+,10 V
 ```
 
-Here is an input example from MoNA of mgf format (see the whole file at `./examples/demo_input.mgf`): 
+Here is an input example from MoNA of mgf format (see the whole file at `./examples/input_msms.mgf`): 
 
 ```
 BEGIN IONS
@@ -55,11 +55,11 @@ Step 2: Predict the MS/MS spectra using the following command:
 
 ```bash
 python scripts/predict.py --task msms \
---test_data ./examples/demo_input.csv \
+--test_data ./examples/input_msms.csv \
 --model_config_path ./molnetpack/config/molnet.yml \
 --data_config_path ./molnetpack/config/preprocess_etkdgv3.yml \
 --resume_path ./check_point/molnet_qtof_etkdgv3.pt \
---result_path ./examples/demo_output.mgf
+--result_path ./examples/output_msms.mgf
 ```
 
 Arguments: 
