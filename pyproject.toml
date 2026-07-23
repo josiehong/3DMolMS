@@ -52,6 +52,14 @@ dependencies = [
     "tqdm"
 ]
 
+[project.optional-dependencies]
+docs = [
+    "sphinx>=5,<7",
+    "sphinx_rtd_theme>=1.0.0",
+    "myst-parser>=0.18.0",
+    "sphinxcontrib-napoleon>=0.7",
+]
+
 [project.urls]
 Homepage = "https://github.com/JosieHong/3DMolMS/"
 Issues = "https://github.com/JosieHong/3DMolMS/issues"
